@@ -85,6 +85,59 @@ def clean_str(val):
 
 # ── MAIN BUILD FUNCTION ───────────────────────────────────────────────────────
 
+def read_tdu_rates(excel_path):
+    """Read TDU fixed and variable delivery charges from the TDURates sheet."""
+    try:
+        df = pd.read_excel(excel_path, sheet_name="TDURates", header=None)
+        # Find the header row containing "TDU"
+        header_row = None
+        for i, row in df.iterrows():
+            if any(str(v).strip().upper() == "TDU" for v in row):
+                header_row = i
+                break
+        if header_row is None:
+            print("WARNING: Could not find TDU header row — using hardcoded rates.")
+            return {}
+        df.columns = df.iloc[header_row]
+        df = df.iloc[header_row + 1:].reset_index(drop=True)
+        # Find the right column names (may vary slightly)
+        tdu_col   = next((c for c in df.columns if str(c).strip().upper() == "TDU"), None)
+        fixed_col = next((c for c in df.columns if "FIXED" in str(c).upper()), None)
+        var_col   = next((c for c in df.columns if "VARIABLE" in str(c).upper()), None)
+        if not all([tdu_col, fixed_col, var_col]):
+            print("WARNING: Could not identify TDU rate columns — using hardcoded rates.")
+            return {}
+        rates = {}
+        for _, row in df.iterrows():
+            tdu = str(row[tdu_col]).strip()
+            if not tdu or tdu.lower() == "nan":
+                continue
+            try:
+                rates[tdu] = {
+                    "fixed":    float(str(row[fixed_col]).replace(",", "") or 0),
+                    "variable": float(str(row[var_col]).replace(",", "")  or 0),
+                }
+            except (ValueError, TypeError):
+                continue
+        return rates
+    except Exception as e:
+        print(f"WARNING: Could not read TDURates sheet ({e}) — using hardcoded rates.")
+        return {}
+
+
+def build_tdu_rates_js(tdu_rates):
+    """Build the JavaScript TDU_RATES object string from the dict."""
+    if not tdu_rates:
+        # Fall back to hardcoded values if sheet read failed
+        return None
+    lines = ["var TDU_RATES = {"]
+    for tdu, rates in tdu_rates.items():
+        safe_tdu = tdu.replace('"', '\"')
+        lines.append(f'  "{safe_tdu}": {{ fixed: {rates["fixed"]:.2f},  variable: {rates["variable"]:.6f} }},')
+    lines.append("};")
+    return "\n".join(lines)
+
+
 def build_html(excel_path=EXCEL_PATH,
                sheet_name=SHEET_NAME,
                template_path=TEMPLATE_PATH,

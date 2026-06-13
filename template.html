@@ -363,6 +363,23 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 <script>
 const PLANS = PLANS_DATA_PLACEHOLDER;
 
+
+// ── TDU DELIVERY RATES ────────────────────────────────────────────────────────
+// Source: TDURates sheet — Fixed Charge ($/mo) + Variable Charge ($/kWh)
+// Update these values whenever your Excel TDURates sheet is updated.
+var TDU_RATES = {
+  "AEP TEXAS CENTRAL":                      { fixed: 3.24,  variable: 0.058272 },
+  "AEP TEXAS NORTH":                        { fixed: 3.24,  variable: 0.056677 },
+  "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC":{ fixed: 4.90,  variable: 0.051461 },
+  "ONCOR ELECTRIC DELIVERY COMPANY":        { fixed: 4.06,  variable: 0.061196 },
+  "TEXAS-NEW MEXICO POWER COMPANY":         { fixed: 7.85,  variable: 0.064665 },
+  "LUBBOCK POWER & LIGHT SYSTEM":           { fixed: 0.00,  variable: 0.063120 }
+};
+
+function getTduRates(tdu) {
+  return TDU_RATES[tdu] || { fixed: 0, variable: 0 };
+}
+
 // ── SEASONAL MODEL ────────────────────────────────────────────────────────────
 const MONTHS       = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTH_ABBR   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -484,13 +501,16 @@ function getRateForKwh(plan, kwh) {
 }
 
 function calcAnnualCost(plan, projected) {
+  var tdu = getTduRates(plan.tdu);
   if (plan.baseFee != null && plan.energyCharge != null) {
     var total = 0;
     for (var i = 0; i < projected.length; i++) {
-      total += plan.baseFee + plan.energyCharge * projected[i];
+      // REP base fee + TDU fixed charge + (REP energy charge + TDU variable charge) x kWh
+      total += (plan.baseFee + tdu.fixed) + (plan.energyCharge + tdu.variable) * projected[i];
     }
     return total;
   }
+  // Fallback: use published ¢/kWh rate (already includes TDU charges per PowerToChoose methodology)
   var avg = projected.reduce(function(a,b){return a+b;},0) / 12;
   var rate = getRateForKwh(plan, avg);
   return rate ? (rate / 100) * projected.reduce(function(a,b){return a+b;},0) : null;
@@ -686,11 +706,12 @@ function buildMonthlyTable(p, cardId) {
   if (p.baseFee == null || p.energyCharge == null) return '';
   var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var userInputs = getUserInputs();
+  var tdu = getTduRates(p.tdu);
   var annualTotal = 0;
   var rows = '';
   for (var i = 0; i < 12; i++) {
     var kwh     = Math.round(projectedUsage[i]);
-    var cost    = p.baseFee + p.energyCharge * kwh;
+    var cost    = (p.baseFee + tdu.fixed) + (p.energyCharge + tdu.variable) * kwh;
     annualTotal += cost;
     var isEntered = userInputs[i] !== null && userInputs[i] > 0;
     rows += '<tr>' +
