@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas Power Guru</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F4F8;--surface:#fff;--surface2:#F7FAFC;--border:#E2E8F0;
+  --text:#1A202C;--muted:#718096;--accent:#0E4F8B;--accent2:#1A73C8;
+  --accent-light:#EBF4FF;--green:#276749;--green-bg:#F0FFF4;
+  --radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5}
+
+.page{display:grid;grid-template-columns:360px 1fr;min-height:100vh;align-items:start}
+@media(max-width:800px){.page{grid-template-columns:1fr}}
+
+.left-panel{
+  background:var(--surface);border-right:1px solid var(--border);
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+@media(max-width:800px){.left-panel{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}}
+
+.panel-header{
+  background:linear-gradient(135deg,#0A3560 0%,#1A73C8 100%);
+  color:white;padding:24px 20px 28px;flex-shrink:0;
+}
+.panel-header h1{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+.panel-header p{font-size:12px;opacity:.8}
+
+.panel-body{padding:20px;flex:1;display:flex;flex-direction:column;gap:20px}
+
+.section-label{
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.section-label .dot{
+  width:18px;height:18px;border-radius:50%;background:var(--accent);
+  color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+select,input[type="number"]{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:14px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);
+  transition:border-color .15s,box-shadow .15s;appearance:none;-webkit-appearance:none;
+}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;
+}
+select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(26,115,200,.12);background:white}
+
+.month-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.month-field{display:flex;flex-direction:column;gap:3px}
+.month-name{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.month-field input{padding:7px 10px;font-size:13px;border-radius:7px}
+.month-field input::placeholder{color:#CBD5E0}
+.month-field.estimated input{background:#EBF8FF;border-color:#90CDF4;color:var(--accent2)}
+.month-est{font-size:10px;color:var(--accent2);font-weight:600;min-height:14px}
+
+.usage-total{
+  background:var(--accent-light);border-radius:8px;padding:10px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:13px;color:var(--accent);font-weight:600;margin-top:4px;
+}
+.usage-total-nums{display:flex;gap:16px}
+.usage-num{text-align:right}
+.usage-num-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:800}
+.usage-num-label{font-size:10px;color:var(--accent2);opacity:.8}
+
+.hint{font-size:11px;color:var(--muted);line-height:1.5;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)}
+
+.term-chips{display:flex;flex-wrap:wrap;gap:6px}
+.term-chip input{display:none}
+.term-chip label{
+  display:inline-flex;align-items:center;padding:5px 11px;border:1.5px solid var(--border);
+  border-radius:16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  background:var(--surface2);transition:all .12s;
+}
+.term-chip input:checked+label{background:var(--accent);color:white;border-color:var(--accent)}
+.term-chip label:hover{border-color:var(--accent2);color:var(--accent2)}
+.term-chip input:checked+label:hover{color:white}
+.chip-btns{display:flex;gap:6px;margin-bottom:8px}
+.chip-btn{
+  padding:4px 12px;border:1.5px solid var(--border);border-radius:12px;
+  font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;
+  background:var(--surface2);font-family:'Inter',sans-serif;transition:all .12s;
+}
+.chip-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+
+.toggle-group{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)}
+.toggle-group label{
+  flex:1;text-align:center;padding:8px 6px;font-size:12px;font-weight:600;
+  cursor:pointer;color:var(--muted);transition:background .12s,color .12s;
+  border-right:1.5px solid var(--border);
+}
+.toggle-group label:last-child{border-right:none}
+.toggle-group input[type="radio"]{display:none}
+.toggle-group input[type="radio"]:checked+label{background:var(--accent);color:white}
+
+.right-panel{padding:24px 20px;min-height:100vh}
+@media(max-width:800px){.right-panel{min-height:auto;padding:16px}}
+
+.results-top{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  margin-bottom:16px;padding:14px 18px;background:var(--surface);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.results-count{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--accent)}
+.results-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.sort-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.sort-row select{padding:6px 28px 6px 10px;font-size:12px;width:auto}
+
+
+
+
+
+
+
+.plan-card{
+  background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px;margin-bottom:10px;border-left:4px solid var(--border);
+  transition:box-shadow .15s;position:relative;
+}
+.plan-card:hover{box-shadow:var(--shadow-lg)}
+.plan-card.r1{border-left-color:#D4AF37}
+.plan-card.r2{border-left-color:#A8A9AD}
+.plan-card.r3{border-left-color:#CD7F32}
+
+.plan-badge{
+  position:absolute;top:0;left:0;font-size:9px;font-weight:700;
+  padding:3px 8px;border-radius:11px 0 7px 0;text-transform:uppercase;letter-spacing:.5px;
+  background:var(--border);color:var(--muted);
+}
+.r1 .plan-badge{background:#D4AF37;color:white}
+.r2 .plan-badge{background:#A8A9AD;color:white}
+.r3 .plan-badge{background:#CD7F32;color:white}
+
+.plan-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:10px}
+.plan-rep{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.plan-name{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--text);line-height:1.2}
+
+.plan-cost-box{text-align:right;flex-shrink:0}
+.plan-annual{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--accent);line-height:1}
+.plan-monthly{font-size:12px;color:var(--green);font-weight:600;margin-top:2px}
+.plan-avg-rate{font-size:11px;color:var(--muted);margin-top:3px}
+
+.plan-tags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.tag{
+  display:inline-flex;align-items:center;gap:3px;padding:3px 9px;
+  border-radius:16px;font-size:11px;font-weight:600;
+  background:var(--surface2);color:var(--muted);border:1px solid var(--border);
+}
+.tag.green{background:var(--green-bg);color:var(--green);border-color:#C6F6D5}
+.tag.blue{background:var(--accent-light);color:var(--accent);border-color:#BEE3F8}
+
+.rates-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:10px 0;
+}
+.rate-col{text-align:center}
+.rate-col-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.rate-col-val{font-size:13px;font-weight:700;color:var(--text);margin-top:2px}
+.rate-col-val.hi{color:var(--accent);background:var(--accent-light);border-radius:4px;padding:1px 6px}
+
+.plan-etf{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;margin-bottom:10px;
+  background:var(--surface2);border-radius:7px;border:1px solid var(--border);
+}
+.etf-label{
+  font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;
+}
+.etf-value{font-size:13px;font-weight:700}
+.etf-value.zero{color:var(--green)}
+.etf-value.fixed{color:var(--text)}
+.etf-value.variable{color:var(--muted);font-weight:600}
+.etf-note{font-size:10px;color:var(--muted);margin-left:2px}
+
+.plan-btns{display:flex;gap:7px;flex-wrap:wrap}
+.btn-enroll{
+  flex:1;min-width:120px;padding:9px 14px;background:var(--accent);color:white;
+  border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;
+  text-decoration:none;text-align:center;transition:background .14s;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.btn-enroll:hover{background:#0A3560}
+.btn-efl{
+  padding:9px 14px;background:transparent;color:var(--accent);
+  border:1.5px solid var(--accent);border-radius:7px;font-size:12px;font-weight:600;
+  cursor:pointer;text-decoration:none;text-align:center;transition:background .14s;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.btn-efl:hover{background:var(--accent-light)}
+
+.state-box{
+  background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:48px 24px;text-align:center;color:var(--muted);
+}
+.state-icon{font-size:40px;margin-bottom:12px}
+.state-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.state-sub{font-size:13px;line-height:1.6}
+
+.disclaimer{font-size:11px;color:var(--muted);text-align:center;padding:14px;line-height:1.6;margin-top:6px}
+
+.monthly-breakdown{margin-bottom:10px}
+.breakdown-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:8px 10px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;
+  font-family:'Inter',sans-serif;transition:background .12s;
+}
+.breakdown-toggle:hover{background:var(--accent-light)}
+.breakdown-toggle .arrow{
+  font-size:10px;transition:transform .2s;display:inline-block;
+}
+.breakdown-toggle.open .arrow{transform:rotate(180deg)}
+.breakdown-table-wrap{
+  display:none;
+  border:1px solid var(--border);border-top:none;
+  border-radius:0 0 7px 7px;overflow:hidden;
+}
+.breakdown-table-wrap.open{display:block}
+.breakdown-table{width:100%;border-collapse:collapse;font-size:12px}
+.breakdown-table th{
+  background:var(--surface2);padding:6px 10px;
+  font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.4px;text-align:right;
+}
+.breakdown-table th:first-child{text-align:left}
+.breakdown-table td{
+  padding:6px 10px;border-top:1px solid var(--border);
+  text-align:right;color:var(--text);font-weight:500;
+}
+.breakdown-table td:first-child{text-align:left;font-weight:600;color:var(--muted)}
+.breakdown-table tr:nth-child(even) td{background:#FAFBFC}
+.breakdown-table td.cost{font-weight:700;color:var(--accent)}
+.breakdown-table td.entered{color:var(--text)}
+.breakdown-table td.estimated{color:var(--accent2);font-style:italic}
+.breakdown-table tfoot td{
+  background:var(--accent-light);font-weight:700;color:var(--accent);
+  border-top:2px solid var(--accent);
+}
+.panel-disclosure{
+  margin-top:14px;padding:10px 12px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:8px;
+  font-size:11px;line-height:1.6;opacity:.9;
+}
+.left-panel::-webkit-scrollbar{width:4px}
+.left-panel::-webkit-scrollbar-track{background:transparent}
+.left-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="panel-header">
+    <h1>⚡ Texas Power Guru</h1>
+    <p>Results update automatically as you adjust filters</p>
+    <div class="panel-disclosure">
+      Texas Power Guru is independently operated and is not affiliated with, endorsed by, or receiving compensation from any electricity provider. We do not collect commissions from any source. All plan data is sourced directly from the Public Utility Commission of Texas website PowerToChoose.org.
+    </div>
+  </div>
+  <div class="panel-body">
+
+    <div>
+      <div class="section-label"><span class="dot">1</span> Service Area (TDU)</div>
+      <select id="tdu" onchange="onFilterChange()">
+        <option value="">— Select your area —</option>
+        <option value="AEP TEXAS CENTRAL">AEP Texas Central</option>
+        <option value="AEP TEXAS NORTH">AEP Texas North</option>
+        <option value="CENTERPOINT ENERGY HOUSTON ELECTRIC LLC">CenterPoint Energy Houston</option>
+        <option value="ONCOR ELECTRIC DELIVERY COMPANY">Oncor Electric Delivery</option>
+        <option value="TEXAS-NEW MEXICO POWER COMPANY">Texas-New Mexico Power (TNMP)</option>
+        <option value="LUBBOCK POWER &amp; LIGHT SYSTEM">Lubbock Power &amp; Light</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="section-label"><span class="dot">2</span> Monthly Usage (kWh)</div>
+      <div class="hint" style="margin-bottom:10px">Enter any months you know — blanks are estimated from Texas seasonal averages.</div>
+      <div class="month-grid" id="monthGrid"></div>
+      <div class="usage-total">
+        <div style="font-size:12px">Projected annual</div>
+        <div class="usage-total-nums">
+          <div class="usage-num">
+            <div class="usage-num-val" id="annualKwh">—</div>
+            <div class="usage-num-label">kWh/yr</div>
+          </div>
+          <div class="usage-num">
+            <div class="usage-num-val" id="monthlyKwh">—</div>
+            <div class="usage-num-label">avg/mo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label"><span class="dot">3</span> Contract Term</div>
+      <div class="chip-btns">
+        <button class="chip-btn" onclick="selectAllTerms()">All</button>
+        <button class="chip-btn" onclick="clearAllTerms()">Clear</button>
+      </div>
+      <div class="term-chips" id="termChips"></div>
+    </div>
+
+    <div>
+      <div class="section-label"><span class="dot">4</span> Renewable Energy</div>
+      <div class="toggle-group">
+        <input type="radio" name="renew" id="r-any" value="any" checked onchange="onFilterChange()">
+        <label for="r-any">Any</label>
+        <input type="radio" name="renew" id="r-green" value="green" onchange="onFilterChange()">
+        <label for="r-green">🌱 100% Only</label>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="state-box" id="emptyState">
+    <div class="state-icon">⚡</div>
+    <div class="state-title">Select your service area to get started</div>
+    <div class="state-sub">Plans will appear automatically as you fill in your details on the left.</div>
+  </div>
+  <div id="resultArea" style="display:none">
+    <div class="results-top">
+      <div>
+        <div class="results-count" id="resultsCount"></div>
+        <div class="results-sub" id="resultsSub" style="display:none"></div>
+      </div>
+      <div class="sort-row">
+        Sort:
+        <select id="sortBy" onchange="renderPlans()">
+          <option value="cost">Lowest Annual Cost</option>
+          <option value="etf">Lowest Early Termination Fee</option>
+        </select>
+      </div>
+    </div>
+    <div id="plansList"></div>
+    <div class="disclaimer">
+      Rates sourced from PowerToChoose. Annual cost estimates use each plan's base fee and energy charge
+      applied to your projected monthly usage. Actual bills may vary. Always review the EFL before enrolling.
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+const PLANS = PLANS_DATA_PLACEHOLDER;
+
+// ── SEASONAL MODEL ────────────────────────────────────────────────────────────
+const MONTHS       = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_ABBR   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const HIST_AVG     = [890.18,735.91,676.64,655.82,757.18,1077.91,1304,1359,1299,926.82,698.09,701.82];
+const SEASON_RATIO = [0.963890,0.796843,0.732663,0.710121,0.819878,1.167162,1.411973,1.471527,1.406559,1.003560,0.755894,0.759930];
+
+function projectUsage(userInputs) {
+  var bases = [];
+  for (var i = 0; i < 12; i++) {
+    if (userInputs[i] !== null && userInputs[i] > 0) {
+      bases.push(userInputs[i] / SEASON_RATIO[i]);
+    }
+  }
+  var base = bases.length > 0 ? bases.reduce(function(a,b){return a+b;},0) / bases.length : null;
+  return MONTHS.map(function(_,i) {
+    if (userInputs[i] !== null && userInputs[i] > 0) return userInputs[i];
+    if (base !== null) return Math.round(base * SEASON_RATIO[i]);
+    return Math.round(HIST_AVG[i]);
+  });
+}
+
+// ── MONTH GRID ────────────────────────────────────────────────────────────────
+function buildMonthGrid() {
+  var g = document.getElementById('monthGrid');
+  var rows = '';
+  for (var i = 0; i < 12; i++) {
+    rows += '<div class="month-field" id="mf' + i + '">' +
+      '<div class="month-name">' + MONTH_ABBR[i] + '</div>' +
+      '<input type="number" id="u' + i + '" placeholder="est." min="0" max="9999" step="50" oninput="onUsageChange()">' +
+      '<div class="month-est" id="e' + i + '"></div>' +
+      '</div>';
+  }
+  g.innerHTML = rows;
+  onUsageChange();
+}
+
+function getUserInputs() {
+  var inputs = [];
+  for (var i = 0; i < 12; i++) {
+    var v = document.getElementById('u' + i).value;
+    inputs.push(v !== '' && !isNaN(v) && parseFloat(v) > 0 ? parseFloat(v) : null);
+  }
+  return inputs;
+}
+
+var projectedUsage = projectUsage([null,null,null,null,null,null,null,null,null,null,null,null]);
+
+function onUsageChange() {
+  var inputs = getUserInputs();
+  projectedUsage = projectUsage(inputs);
+  for (var i = 0; i < 12; i++) {
+    var mf  = document.getElementById('mf' + i);
+    var est = document.getElementById('e' + i);
+    if (inputs[i] === null) {
+      mf.classList.add('estimated');
+      est.textContent = Math.round(projectedUsage[i]).toLocaleString() + ' kWh est.';
+    } else {
+      mf.classList.remove('estimated');
+      est.textContent = '';
+    }
+  }
+  var total = projectedUsage.reduce(function(a,b){return a+b;},0);
+  document.getElementById('annualKwh').textContent  = Math.round(total).toLocaleString();
+  document.getElementById('monthlyKwh').textContent = Math.round(total/12).toLocaleString();
+  onFilterChange();
+}
+
+// ── TERM CHIPS ────────────────────────────────────────────────────────────────
+var TERM_LABELS = {3:'3 mo',4:'4 mo',6:'6 mo',7:'7 mo',9:'9 mo',12:'12 mo',13:'13 mo',14:'14 mo',15:'15 mo',18:'18 mo',24:'24 mo',28:'28 mo',36:'36 mo',48:'48 mo',60:'60 mo'};
+var lastTduForChips = null;
+
+function buildTermChips(tdu) {
+  var available;
+  if (tdu) {
+    var seen = {};
+    var arr = [];
+    for (var i = 0; i < PLANS.length; i++) {
+      if (PLANS[i].tdu === tdu && !seen[PLANS[i].term]) {
+        seen[PLANS[i].term] = true;
+        arr.push(PLANS[i].term);
+      }
+    }
+    arr.sort(function(a,b){return a-b;});
+    available = arr;
+  } else {
+    available = [3,4,6,7,9,12,13,14,15,18,24,28,36,48,60];
+  }
+  var c = document.getElementById('termChips');
+  var html = '';
+  for (var j = 0; j < available.length; j++) {
+    var t = available[j];
+    var lbl = TERM_LABELS[t] || (t + ' mo');
+    html += '<div class="term-chip">' +
+      '<input type="checkbox" id="tc' + t + '" value="' + t + '" checked onchange="onFilterChange()">' +
+      '<label for="tc' + t + '">' + lbl + '</label>' +
+      '</div>';
+  }
+  c.innerHTML = html;
+  lastTduForChips = tdu;
+}
+
+function selectAllTerms() {
+  var cbs = document.querySelectorAll('#termChips input');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = true;
+  onFilterChange();
+}
+function clearAllTerms() {
+  var cbs = document.querySelectorAll('#termChips input');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+  onFilterChange();
+}
+
+// ── PRICING ───────────────────────────────────────────────────────────────────
+function getUsageTier(kwh) { return kwh <= 750 ? 500 : kwh <= 1500 ? 1000 : 2000; }
+
+function getRateForKwh(plan, kwh) {
+  var t = getUsageTier(kwh);
+  return t === 500 ? plan.rate500 : t === 1000 ? plan.rate1000 : plan.rate2000;
+}
+
+function calcAnnualCost(plan, projected) {
+  if (plan.baseFee != null && plan.energyCharge != null) {
+    var total = 0;
+    for (var i = 0; i < projected.length; i++) {
+      total += plan.baseFee + plan.energyCharge * projected[i];
+    }
+    return total;
+  }
+  var avg = projected.reduce(function(a,b){return a+b;},0) / 12;
+  var rate = getRateForKwh(plan, avg);
+  return rate ? (rate / 100) * projected.reduce(function(a,b){return a+b;},0) : null;
+}
+
+function getRenewPct(plan) {
+  var m = plan.renewable.match(/(\d+)%/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+// ── CANCEL FEE PARSING ────────────────────────────────────────────────────────
+function parseCancelFee(feeStr) {
+  var s = feeStr.replace(/Cancellation Fee:\s*/i, '').replace(/\$\$/, '$').trim();
+  // Per-month / variable patterns
+  if (/per\s*month/i.test(s))      return { amt: null, fixed: false };
+  if (/month\s*remain/i.test(s))   return { amt: null, fixed: false };
+  if (/remaining\s*month/i.test(s)) return { amt: null, fixed: false };
+  if (/\/\s*month/i.test(s))       return { amt: null, fixed: false };
+  // Fixed flat fee
+  var m = s.match(/\$([\d.]+)/);
+  if (m) return { amt: parseFloat(m[1]), fixed: true };
+  return { amt: null, fixed: false };
+}
+
+// ── FILTER + RENDER ───────────────────────────────────────────────────────────
+var currentPlans = [];
+
+function onFilterChange() {
+  var tdu = document.getElementById('tdu').value;
+
+  // Rebuild chips when TDU changes
+  if (tdu !== lastTduForChips) buildTermChips(tdu);
+
+  var emptyState  = document.getElementById('emptyState');
+  var resultArea  = document.getElementById('resultArea');
+
+  if (!tdu) {
+    emptyState.style.display = '';
+    resultArea.style.display = 'none';
+    return;
+  }
+  emptyState.style.display = 'none';
+  resultArea.style.display = '';
+
+  var checkedCbs = document.querySelectorAll('#termChips input:checked');
+  var selectedTerms = {};
+  for (var i = 0; i < checkedCbs.length; i++) {
+    selectedTerms[parseInt(checkedCbs[i].value)] = true;
+  }
+  var renew = document.querySelector('input[name="renew"]:checked').value;
+
+  currentPlans = PLANS.filter(function(p) {
+    if (p.tdu !== tdu) return false;
+    if (!selectedTerms[p.term]) return false;
+    if (renew === 'green' && p.renewable.indexOf('100%') === -1) return false;
+    return true;
+  });
+
+  var avgKwh = projectedUsage.reduce(function(a,b){return a+b;},0) / 12;
+  for (var j = 0; j < currentPlans.length; j++) {
+    currentPlans[j]._annual   = calcAnnualCost(currentPlans[j], projectedUsage);
+    currentPlans[j]._avgRate  = getRateForKwh(currentPlans[j], avgKwh);
+    var etf = parseCancelFee(currentPlans[j].cancelFee);
+    currentPlans[j]._etfAmt   = etf.amt;
+    currentPlans[j]._etfFixed = etf.fixed;
+  }
+
+
+
+  renderPlans();
+}
+
+function renderPlans() {
+  var sort   = document.getElementById('sortBy').value;
+  var sorted = currentPlans.slice();
+
+  sorted.sort(function(a, b) {
+    if (sort === 'cost')      return (a._annual || 1e9) - (b._annual || 1e9);
+    if (sort === 'rate')      return (a._avgRate || 999) - (b._avgRate || 999);
+    if (sort === 'term-asc')  return a.term - b.term;
+    if (sort === 'term-desc') return b.term - a.term;
+    if (sort === 'renewable') return getRenewPct(b) - getRenewPct(a);
+    if (sort === 'etf') {
+      // Fixed known fees first (ascending), variable/unknown last
+      if (a._etfFixed && b._etfFixed) return a._etfAmt - b._etfAmt;
+      if (a._etfFixed)  return -1;
+      if (b._etfFixed)  return  1;
+      return 0;
+    }
+    return 0;
+  });
+
+  var tdu = document.getElementById('tdu').value;
+  var tduCount = PLANS.filter(function(p){ return p.tdu === tdu; }).length;
+  document.getElementById('resultsCount').textContent =
+    'Showing ' + sorted.length + ' of ' + tduCount + ' plans in your area  ·  ' + PLANS.length + ' total plans across all service areas';
+
+
+
+  var avgKwh = projectedUsage.reduce(function(a,b){return a+b;},0) / 12;
+  var tier   = getUsageTier(avgKwh);
+  var container = document.getElementById('plansList');
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="state-box"><div class="state-icon">🔍</div><div class="state-title">No plans match</div><div class="state-sub">Try selecting more term lengths or switching to "Any" renewable.</div></div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < sorted.length; i++) {
+    html += buildPlanCard(sorted[i], i, tier);
+  }
+  container.innerHTML = html;
+}
+
+function buildPlanCard(p, rank, tier) {
+  var rc    = rank === 0 ? 'r1' : rank === 1 ? 'r2' : rank === 2 ? 'r3' : '';
+  var badge = rank === 0 ? '🥇 Best Value' : rank === 1 ? '🥈 2nd' : rank === 2 ? '🥉 3rd' : '#' + (rank + 1);
+
+  var annualStr  = p._annual ? '$' + Math.round(p._annual).toLocaleString() + '/yr' : '';
+  var monthlyStr = p._annual ? '~$' + Math.round(p._annual / 12) + '/mo avg' : '';
+  var rateStr    = p._avgRate ? p._avgRate.toFixed(1) + '¢/kWh avg' : '';
+  var renewPct   = getRenewPct(p);
+
+  // ETF display
+  var etfHtml;
+  if (p._etfFixed && p._etfAmt === 0) {
+    etfHtml = '<span class="etf-value zero">✓ None</span>';
+  } else if (p._etfFixed) {
+    var fmtAmt = (p._etfAmt % 1 === 0) ? p._etfAmt.toFixed(0) : p._etfAmt.toFixed(2);
+    etfHtml = '<span class="etf-value fixed">$' + fmtAmt + '</span>';
+  } else {
+    var perM = p.cancelFee.match(/\$(\d+)/);
+    var perAmt = perM ? '$' + perM[1] : 'Variable';
+    etfHtml = '<span class="etf-value variable">' + perAmt + ' per remaining month</span>';
+  }
+
+  var r500  = p.rate500  != null ? p.rate500.toFixed(1)  + '¢' : '—';
+  var r1000 = p.rate1000 != null ? p.rate1000.toFixed(1) + '¢' : '—';
+  var r2000 = p.rate2000 != null ? p.rate2000.toFixed(1) + '¢' : '—';
+
+  var enroll = (p.enrollUrl && p.enrollUrl !== 'nan' && p.enrollUrl !== 'None')
+    ? '<a class="btn-enroll" href="' + esc(p.enrollUrl) + '" target="_blank" rel="noopener">⚡ Enroll</a>' : '';
+  var efl = (p.eflUrl && p.eflUrl !== 'nan' && p.eflUrl !== 'None')
+    ? '<a class="btn-efl" href="' + esc(p.eflUrl) + '" target="_blank" rel="noopener">📄 EFL</a>' : '';
+
+  return '<div class="plan-card ' + rc + '">' +
+    '<div class="plan-badge">' + badge + '</div>' +
+    '<div class="plan-head">' +
+      '<div>' +
+        '<div class="plan-rep">' + esc(p.rep) + '</div>' +
+        '<div class="plan-name">' + esc(p.name) + '</div>' +
+      '</div>' +
+      '<div class="plan-cost-box">' +
+        (annualStr  ? '<div class="plan-annual">'   + annualStr  + '</div>' : '') +
+        (monthlyStr ? '<div class="plan-monthly">'  + monthlyStr + '</div>' : '') +
+        (rateStr    ? '<div class="plan-avg-rate">'  + rateStr    + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="plan-tags">' +
+      '<span class="tag blue">📅 ' + p.term + ' mo</span>' +
+      '<span class="tag ' + (renewPct === 100 ? 'green' : '') + '">' + (renewPct === 100 ? '🌱' : '⚡') + ' ' + esc(p.renewable) + '</span>' +
+      (p.phone && p.phone !== 'nan' ? '<span class="tag">📞 ' + esc(p.phone) + '</span>' : '') +
+    '</div>' +
+    '<div class="rates-row">' +
+      '<div class="rate-col"><div class="rate-col-label">@ 500 kWh</div><div class="rate-col-val ' + (tier===500?'hi':'') + '">' + r500 + '</div></div>' +
+      '<div class="rate-col"><div class="rate-col-label">@ 1,000 kWh</div><div class="rate-col-val ' + (tier===1000?'hi':'') + '">' + r1000 + '</div></div>' +
+      '<div class="rate-col"><div class="rate-col-label">@ 2,000 kWh</div><div class="rate-col-val ' + (tier===2000?'hi':'') + '">' + r2000 + '</div></div>' +
+    '</div>' +
+    '<div class="plan-etf">' +
+      '<span class="etf-label">Early Termination Fee</span>' +
+      etfHtml +
+    '</div>' +
+    buildMonthlyTable(p, 'p' + rank) +
+    '<div class="plan-btns">' + enroll + efl + '</div>' +
+  '</div>';
+}
+
+function toggleBreakdown(id) {
+  var btn   = document.getElementById('btn-' + id);
+  var table = document.getElementById('tbl-' + id);
+  var isOpen = table.classList.contains('open');
+  if (isOpen) {
+    table.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    table.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function buildMonthlyTable(p, cardId) {
+  if (p.baseFee == null || p.energyCharge == null) return '';
+  var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var userInputs = getUserInputs();
+  var annualTotal = 0;
+  var rows = '';
+  for (var i = 0; i < 12; i++) {
+    var kwh     = Math.round(projectedUsage[i]);
+    var cost    = p.baseFee + p.energyCharge * kwh;
+    annualTotal += cost;
+    var isEntered = userInputs[i] !== null && userInputs[i] > 0;
+    rows += '<tr>' +
+      '<td>' + ABBR[i] + '</td>' +
+      '<td class="' + (isEntered ? 'entered' : 'estimated') + '">' +
+        kwh.toLocaleString() + ' kWh' + (isEntered ? '' : '*') +
+      '</td>' +
+      '<td class="cost">$' + cost.toFixed(2) + '</td>' +
+    '</tr>';
+  }
+  var hasEstimates = userInputs.some(function(v){ return v === null; });
+  return '<div class="monthly-breakdown">' +
+    '<button class="breakdown-toggle" id="btn-' + cardId + '" onclick="toggleBreakdown(' + "'" + cardId + "'" + ')">' +
+      '📅 View projected monthly costs' +
+      '<span class="arrow">▼</span>' +
+    '</button>' +
+    '<div class="breakdown-table-wrap" id="tbl-' + cardId + '">' +
+      '<table class="breakdown-table">' +
+        '<thead><tr><th>Month</th><th>Usage</th><th>Est. Cost</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '<tfoot><tr>' +
+          '<td colspan="2">Annual Total</td>' +
+          '<td>$' + annualTotal.toFixed(2) + '</td>' +
+        '</tr></tfoot>' +
+      '</table>' +
+      (hasEstimates ? '<div style="font-size:10px;color:var(--muted);padding:6px 10px;background:var(--surface2);">* Estimated from seasonal averages</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+function tduLabel(tdu) {
+  var map = {
+    'AEP TEXAS CENTRAL':'AEP Texas Central',
+    'AEP TEXAS NORTH':'AEP Texas North',
+    'CENTERPOINT ENERGY HOUSTON ELECTRIC LLC':'CenterPoint Energy Houston',
+    'ONCOR ELECTRIC DELIVERY COMPANY':'Oncor Electric Delivery',
+    'TEXAS-NEW MEXICO POWER COMPANY':'Texas-New Mexico Power',
+    'LUBBOCK POWER & LIGHT SYSTEM':'Lubbock Power & Light'
+  };
+  return map[tdu] || tdu;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Init
+buildMonthGrid();
+buildTermChips('');
+</script>
+</body>
+</html>
