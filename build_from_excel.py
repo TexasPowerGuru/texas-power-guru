@@ -1,19 +1,18 @@
 """
 Texas Power Guru — Excel to HTML Builder
 =========================================
-Reads your updated Excel file (PowertoChooseResults sheet) and rebuilds
-index.html with fresh plan data.
+Reads your updated Excel file and builds TWO versions of the app:
+
+  index.html            — full version (plan name, enroll link, EFL shown)
+  index_restricted.html — restricted version (plan name, enroll link, EFL hidden)
 
 HOW TO USE:
-  Add one line at the end of your existing daily Python script:
+  Add this to the end of your existing daily Python script:
 
-      import subprocess
-      subprocess.run(["python", r"C:/path\to\build_from_excel.py"])
+      from build_from_excel import build_all
+      build_all(excel_path=r"C:\path\to\your_file.xlsx")
 
-  Or call build_html() directly if you prefer to import it:
-
-      from build_from_excel import build_html
-      build_html(excel_path="your_file.xlsx")
+  Or run directly in Spyder: open this file and press F5.
 
 REQUIREMENTS:
   pip install pandas openpyxl
@@ -27,45 +26,23 @@ import sys
 from datetime import datetime, timezone
 
 
-# ── CONFIGURATION — edit these paths ─────────────────────────────────────────
+# ── CONFIGURATION — edit these paths ──────────────────────────────────────────
 
-# Path to your Excel file (update this to match where your script saves it)
-EXCEL_PATH = "Premium_Model_App_Test.xlsx"
+EXCEL_PATH   = "Premium_Model_App_Test.xlsx"
+SHEET_NAME   = "PowertoChooseResults"
 
-# Sheet name containing plan data
-SHEET_NAME = "PowertoChooseResults"
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 
-# Template file (the app shell — sits next to this script)
-TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.html")
-
-# Output file (what GitHub Pages serves)
-OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "index.html")
-
-
-# ── COLUMN MAP — maps Excel columns to app field names ───────────────────────
-
-COLUMN_MAP = {
-    "TDU Area":          "tdu",
-    "REP":               "rep",
-    "Plan Name":         "name",
-    "Length of Plan":    "term",
-    "500KWH":            "rate500",
-    "1000KwH":           "rate1000",
-    "2000KwH":           "rate2000",
-    "Cancellation Fee":  "cancelFee",
-    "renewable %":       "renewable",
-    "Enrollment Number": "phone",
-    "Enrollment Page":   "enrollUrl",
-    "EFL:":              "eflUrl",
-    "BaseFee":           "baseFee",
-    "EnergyCharge":      "energyCharge",
-}
+TEMPLATE_FULL        = os.path.join(SCRIPT_DIR, "template.html")
+TEMPLATE_RESTRICTED  = os.path.join(SCRIPT_DIR, "template_restricted.html")
+OUTPUT_FULL          = os.path.join(SCRIPT_DIR, "index.html")
+OUTPUT_RESTRICTED    = os.path.join(SCRIPT_DIR, "index_restricted.html")
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def clean_numeric(val):
-    """Strip brackets from values like '[4.79000000000000]' and return float."""
+    """Strip brackets from '[4.79]' style values and return float."""
     if pd.isna(val):
         return None
     s = str(val).strip().replace("[", "").replace("]", "")
@@ -76,14 +53,14 @@ def clean_numeric(val):
 
 
 def clean_str(val):
-    """Return a clean string or empty string for NaN/None."""
-    if pd.isna(val) if not isinstance(val, str) else False:
+    """Return clean string or empty string for NaN/None."""
+    if not isinstance(val, str) and pd.isna(val):
         return ""
     s = str(val).strip()
     return "" if s.lower() in ("nan", "none") else s
 
 
-# ── MAIN BUILD FUNCTION ───────────────────────────────────────────────────────
+# ── READ TDU RATES FROM EXCEL ─────────────────────────────────────────────────
 
 def read_tdu_rates(excel_path):
     """Read TDU fixed and variable delivery charges from the TDURates sheet."""
@@ -96,16 +73,15 @@ def read_tdu_rates(excel_path):
                 header_row = i
                 break
         if header_row is None:
-            print("WARNING: Could not find TDU header row — using hardcoded rates.")
+            print("  WARNING: Could not find TDU header row — using hardcoded rates.")
             return {}
         df.columns = df.iloc[header_row]
         df = df.iloc[header_row + 1:].reset_index(drop=True)
-        # Find the right column names (may vary slightly)
         tdu_col   = next((c for c in df.columns if str(c).strip().upper() == "TDU"), None)
         fixed_col = next((c for c in df.columns if "FIXED" in str(c).upper()), None)
         var_col   = next((c for c in df.columns if "VARIABLE" in str(c).upper()), None)
         if not all([tdu_col, fixed_col, var_col]):
-            print("WARNING: Could not identify TDU rate columns — using hardcoded rates.")
+            print("  WARNING: Could not identify TDU rate columns — using hardcoded rates.")
             return {}
         rates = {}
         for _, row in df.iterrows():
@@ -121,82 +97,69 @@ def read_tdu_rates(excel_path):
                 continue
         return rates
     except Exception as e:
-        print(f"WARNING: Could not read TDURates sheet ({e}) — using hardcoded rates.")
+        print(f"  WARNING: Could not read TDURates sheet ({e}) — using hardcoded rates.")
         return {}
 
 
 def build_tdu_rates_js(tdu_rates):
     """Build the JavaScript TDU_RATES object string from the dict."""
     if not tdu_rates:
-        # Fall back to hardcoded values if sheet read failed
         return None
     lines = ["var TDU_RATES = {"]
     for tdu, rates in tdu_rates.items():
-        safe_tdu = tdu.replace('"', '\"')
-        lines.append(f'  "{safe_tdu}": {{ fixed: {rates["fixed"]:.2f},  variable: {rates["variable"]:.6f} }},')
+        safe = tdu.replace('"', '\\"')
+        lines.append(
+            '  "' + safe + '": { fixed: ' +
+            str(round(rates["fixed"], 2)) + ',  variable: ' +
+            str(round(rates["variable"], 6)) + ' },'
+        )
     lines.append("};")
     return "\n".join(lines)
 
 
-def build_html(excel_path=EXCEL_PATH,
-               sheet_name=SHEET_NAME,
-               template_path=TEMPLATE_PATH,
-               output_path=OUTPUT_PATH):
+# ── READ PLAN DATA FROM EXCEL ─────────────────────────────────────────────────
 
-    # ── 1. Read Excel ─────────────────────────────────────────────────────────
-    print(f"Reading '{excel_path}' → sheet '{sheet_name}' …")
-    if not os.path.exists(excel_path):
-        print(f"ERROR: Excel file not found at '{excel_path}'", file=sys.stderr)
-        print("       Update EXCEL_PATH in build_from_excel.py to the correct path.")
-        sys.exit(1)
-
+def read_plans(excel_path, sheet_name):
+    """Read and clean plan rows from the PowertoChooseResults sheet."""
     df = pd.read_excel(excel_path, sheet_name=sheet_name)
     print(f"  {len(df)} rows found")
 
-    # ── 2. Check required columns ─────────────────────────────────────────────
-    missing = [c for c in COLUMN_MAP if c not in df.columns]
+    required = ["TDU Area", "REP", "Plan Name", "Length of Plan",
+                "500KWH", "1000KwH", "2000KwH", "Cancellation Fee",
+                "renewable %", "Enrollment Number", "Enrollment Page",
+                "EFL:", "BaseFee", "EnergyCharge"]
+    missing = [c for c in required if c not in df.columns]
     if missing:
-        print(f"ERROR: Missing columns in Excel sheet: {missing}", file=sys.stderr)
-        print(f"       Available columns: {df.columns.tolist()}")
+        print(f"ERROR: Missing columns: {missing}", file=sys.stderr)
         sys.exit(1)
 
-    # ── 3. Convert rows to plan dicts ─────────────────────────────────────────
-    plans = []
-    skipped = 0
-
+    plans, skipped = [], 0
     for _, row in df.iterrows():
-        tdu      = clean_str(row["TDU Area"])
-        rep      = clean_str(row["REP"])
-        name     = clean_str(row["Plan Name"])
-
-        # Skip rows missing essential fields
+        tdu  = clean_str(row["TDU Area"])
+        rep  = clean_str(row["REP"])
+        name = clean_str(row["Plan Name"])
         if not tdu or not rep or not name:
             skipped += 1
             continue
-
         try:
             term = int(float(str(row["Length of Plan"])))
         except (ValueError, TypeError):
             skipped += 1
             continue
-
-        rate500  = clean_numeric(row["500KWH"])
-        rate1000 = clean_numeric(row["1000KwH"])
-        rate2000 = clean_numeric(row["2000KwH"])
-
-        # Skip rows with no rate data at all
-        if rate500 is None and rate1000 is None and rate2000 is None:
+        r500  = clean_numeric(row["500KWH"])
+        r1000 = clean_numeric(row["1000KwH"])
+        r2000 = clean_numeric(row["2000KwH"])
+        if r500 is None and r1000 is None and r2000 is None:
             skipped += 1
             continue
-
         plans.append({
             "tdu":          tdu,
             "rep":          rep,
             "name":         name,
             "term":         term,
-            "rate500":      rate500,
-            "rate1000":     rate1000,
-            "rate2000":     rate2000,
+            "rate500":      r500,
+            "rate1000":     r1000,
+            "rate2000":     r2000,
             "cancelFee":    clean_str(row["Cancellation Fee"]),
             "renewable":    clean_str(row["renewable %"]),
             "phone":        clean_str(row["Enrollment Number"]),
@@ -205,51 +168,83 @@ def build_html(excel_path=EXCEL_PATH,
             "baseFee":      clean_numeric(row["BaseFee"]),
             "energyCharge": clean_numeric(row["EnergyCharge"]),
         })
-
     print(f"  {len(plans)} valid plans · {skipped} rows skipped")
+    return plans
 
-    if not plans:
-        print("ERROR: No valid plans found. HTML not updated.", file=sys.stderr)
-        sys.exit(1)
 
-    # ── 4. Read template ──────────────────────────────────────────────────────
+# ── BUILD ONE HTML FILE ───────────────────────────────────────────────────────
+
+def build_one(plans, tdu_rates_js, updated_at, template_path, output_path, label):
+    """Inject plan data into a template and write the output file."""
     if not os.path.exists(template_path):
-        print(f"ERROR: template.html not found at '{template_path}'", file=sys.stderr)
-        sys.exit(1)
-
+        print(f"  ERROR: template not found at '{template_path}'", file=sys.stderr)
+        return False
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
-
     if "PLANS_DATA_PLACEHOLDER" not in template:
-        print("ERROR: template.html is missing the PLANS_DATA_PLACEHOLDER token.", file=sys.stderr)
-        sys.exit(1)
+        print(f"  ERROR: PLANS_DATA_PLACEHOLDER missing in {template_path}", file=sys.stderr)
+        return False
 
-    # ── 5. Inject data + timestamp ────────────────────────────────────────────
-    plans_json = json.dumps(plans, separators=(",", ":"))
-    updated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
+    html = template.replace("PLANS_DATA_PLACEHOLDER", json.dumps(plans, separators=(",", ":")))
 
-    html = template.replace("PLANS_DATA_PLACEHOLDER", plans_json)
+    # Inject fresh TDU rates if we got them from Excel
+    if tdu_rates_js:
+        html = re.sub(r"var TDU_RATES = \{.*?\};", tdu_rates_js, html, flags=re.DOTALL)
+
     html = html.replace(
         "Rates sourced from PowerToChoose",
         f"Last updated: {updated_at} · Rates sourced from PowerToChoose"
     )
 
-    # ── 6. Write output ───────────────────────────────────────────────────────
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
+    print(f"  {label} written ({len(html)//1024} KB) → '{output_path}'")
+    return True
 
-    size_kb = len(html) / 1024
-    print(f"  index.html written ({size_kb:.0f} KB) → '{output_path}'")
-    print(f"  Timestamp: {updated_at}")
-    print("Done!")
+
+# ── MAIN ──────────────────────────────────────────────────────────────────────
+
+def build_all(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
+    print("=" * 60)
+    print("Texas Power Guru — Excel to HTML Builder")
+    print("=" * 60)
+
+    if not os.path.exists(excel_path):
+        print(f"ERROR: Excel file not found at '{excel_path}'", file=sys.stderr)
+        print("       Update EXCEL_PATH at the top of build_from_excel.py")
+        sys.exit(1)
+
+    # 1. Read plans
+    print(f"\nReading plans from '{excel_path}' …")
+    plans = read_plans(excel_path, sheet_name)
+    if not plans:
+        print("ERROR: No valid plans found.", file=sys.stderr)
+        sys.exit(1)
+
+    # 2. Read TDU rates
+    print("\nReading TDU delivery rates …")
+    tdu_rates = read_tdu_rates(excel_path)
+    tdu_rates_js = build_tdu_rates_js(tdu_rates)
+    for tdu, r in tdu_rates.items():
+        print(f"  {tdu}: fixed=${r['fixed']:.2f}  variable=${r['variable']:.6f}")
+
+    updated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
+
+    # 3. Build full version
+    print("\nBuilding full version (index.html) …")
+    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_FULL, OUTPUT_FULL, "index.html")
+
+    # 4. Build restricted version
+    print("\nBuilding restricted version (index_restricted.html) …")
+    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_RESTRICTED, OUTPUT_RESTRICTED, "index_restricted.html")
+
+    print(f"\nAll done! Timestamp: {updated_at}")
 
 
 # ── RUN DIRECTLY ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Optional: pass excel path as command-line argument
-    # e.g.  python build_from_excel.py "C:\data\my_plans.xlsx"
     if len(sys.argv) > 1:
-        build_html(excel_path=sys.argv[1])
+        build_all(excel_path=sys.argv[1])
     else:
-        build_html()
+        build_all()

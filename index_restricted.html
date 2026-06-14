@@ -652,17 +652,15 @@ function buildPlanCard(p, rank, tier) {
   var r1000 = p.rate1000 != null ? p.rate1000.toFixed(1) + '¢' : '—';
   var r2000 = p.rate2000 != null ? p.rate2000.toFixed(1) + '¢' : '—';
 
-  var enroll = (p.enrollUrl && p.enrollUrl !== 'nan' && p.enrollUrl !== 'None')
-    ? '<a class="btn-enroll" href="' + esc(p.enrollUrl) + '" target="_blank" rel="noopener">⚡ Enroll</a>' : '';
-  var efl = (p.eflUrl && p.eflUrl !== 'nan' && p.eflUrl !== 'None')
-    ? '<a class="btn-efl" href="' + esc(p.eflUrl) + '" target="_blank" rel="noopener">📄 EFL</a>' : '';
+  var enroll = '';
+  var efl = '';
 
   return '<div class="plan-card ' + rc + '">' +
     '<div class="plan-badge">' + badge + '</div>' +
     '<div class="plan-head">' +
       '<div>' +
         '<div class="plan-rep">' + esc(p.rep) + '</div>' +
-        '<div class="plan-name">' + esc(p.name) + '</div>' +
+        /* plan name hidden */
       '</div>' +
       '<div class="plan-cost-box">' +
         (annualStr  ? '<div class="plan-annual">'   + annualStr  + '</div>' : '') +
@@ -673,7 +671,7 @@ function buildPlanCard(p, rank, tier) {
     '<div class="plan-tags">' +
       '<span class="tag blue">📅 ' + p.term + ' mo</span>' +
       '<span class="tag ' + (renewPct === 100 ? 'green' : '') + '">' + (renewPct === 100 ? '🌱' : '⚡') + ' ' + esc(p.renewable) + '</span>' +
-      (p.phone && p.phone !== 'nan' ? '<span class="tag">📞 ' + esc(p.phone) + '</span>' : '') +
+      /* phone hidden */
     '</div>' +
     '<div class="rates-row">' +
       '<div class="rate-col"><div class="rate-col-label">@ 500 kWh</div><div class="rate-col-val ' + (tier===500?'hi':'') + '">' + r500 + '</div></div>' +
@@ -685,7 +683,7 @@ function buildPlanCard(p, rank, tier) {
       etfHtml +
     '</div>' +
     buildMonthlyTable(p, 'p' + rank) +
-    '<div class="plan-btns">' + enroll + efl + '</div>' +
+    /* enroll/efl buttons hidden */
   '</div>';
 }
 
