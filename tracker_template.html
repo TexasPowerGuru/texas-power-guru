@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas Power Guru — Rate Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F4F8;--surface:#fff;--surface2:#F7FAFC;--border:#E2E8F0;
+  --text:#1A202C;--muted:#718096;--accent:#0E4F8B;--accent2:#1A73C8;
+  --accent-light:#EBF4FF;--radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+
+.header{
+  background:linear-gradient(135deg,#0A3560 0%,#1A73C8 100%);
+  color:white;padding:28px 24px 36px;text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:rgba(255,255,255,0.06);border-radius:50%}
+.header::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;background:rgba(255,255,255,0.04);border-radius:50%}
+.header h1{font-family:'Sora',sans-serif;font-size:clamp(20px,4vw,28px);font-weight:800;letter-spacing:-.5px;position:relative;z-index:1;margin-bottom:4px}
+.header p{font-size:13px;opacity:.8;position:relative;z-index:1}
+
+.container{max-width:1100px;margin:-20px auto 0;padding:0 16px 48px;position:relative;z-index:2}
+
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:16px}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.stats-row{grid-template-columns:1fr 1fr}}@media(max-width:500px){.stats-row{grid-template-columns:1fr}}
+.stat-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 20px}
+.stat-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.stat-val{font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:var(--accent)}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.stat-change{font-size:12px;font-weight:700;margin-top:4px}
+.stat-change.up{color:#C53030}
+.stat-change.down{color:#276749}
+
+/* FILTERS */
+.filter-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.filter-group{display:flex;flex-direction:column;gap:5px}
+.filter-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+select{
+  padding:8px 30px 8px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+select:focus{outline:none;border-color:var(--accent2)}
+
+/* TDU FILTER CHIPS */
+.tdu-filter-chips{display:flex;flex-wrap:wrap;gap:7px}
+.tdu-filter-chip input{display:none}
+.tdu-filter-chip label{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 14px;
+  border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;
+  color:var(--muted);cursor:pointer;background:var(--surface2);transition:all .12s;
+}
+.tdu-filter-chip input:checked + label{background:var(--accent);color:white;border-color:var(--accent)}
+.tdu-filter-chip label:hover{border-color:var(--accent2);color:var(--accent2)}
+.tdu-filter-chip input:checked + label:hover{color:white}
+
+/* TDU TOGGLE CHIPS */
+.tdu-chips{display:flex;flex-wrap:wrap;gap:7px}
+.tdu-chip input{display:none}
+.tdu-chip label{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 12px;
+  border:2px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;
+  color:var(--muted);cursor:pointer;background:var(--surface2);transition:all .12s;
+}
+.tdu-chip input:checked + label{color:white;border-color:transparent}
+.tdu-chip label:hover{border-color:var(--accent2)}
+.tdu-chip label .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.8}
+
+/* CHART */
+.chart-wrap{position:relative;height:420px}
+@media(max-width:600px){.chart-wrap{height:280px}}
+
+/* RANGE BUTTONS */
+.range-btns{display:flex;gap:6px;flex-wrap:wrap}
+.range-btn{
+  padding:5px 14px;border:1.5px solid var(--border);border-radius:16px;
+  font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  background:var(--surface2);font-family:'Inter',sans-serif;transition:all .12s;
+}
+.range-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.range-btn:hover:not(.active){border-color:var(--accent2);color:var(--accent2)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{
+  background:var(--surface2);padding:8px 12px;font-size:10px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:left;
+  border-bottom:2px solid var(--border);
+}
+.data-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:nth-child(even) td{background:#FAFBFC}
+.data-table td.rate{font-weight:700;font-family:'Sora',sans-serif;font-size:14px}
+.data-table td.up{color:#C53030}
+.data-table td.down{color:#276749}
+
+.section-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:16px}
+.disclaimer{font-size:11px;color:var(--muted);text-align:center;padding:12px;line-height:1.6}
+.top-plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.top-plans-grid{grid-template-columns:1fr}}
+.top-plan-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;border-top:3px solid var(--border)}
+.top-plan-card.gold{border-top-color:#D4AF37}
+.top-plan-card.silver{border-top-color:#A8A9AD}
+.top-plan-card.bronze{border-top-color:#CD7F32}
+.top-plan-rank{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.top-plan-rep{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.top-plan-name{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.2}
+.top-plan-rate{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--accent);line-height:1}
+.top-plan-rate-sub{font-size:13px;font-weight:600;color:var(--accent)}
+.top-plan-sub{font-size:11px;color:var(--muted);margin-top:2px;margin-bottom:8px}
+.top-plan-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.top-plan-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.top-plan-tag.green{background:var(--green-bg);color:var(--green);border-color:#C6F6D5}
+.top-plan-enroll{display:inline-block;padding:6px 14px;background:var(--accent);color:white;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ Texas Power Guru — Rate Tracker</h1>
+  <p>Average electricity rates across all Texas service areas over time</p>
+</div>
+
+<div class="container">
+
+  <!-- TDU FILTER -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Filter by service area:</div>
+    <div class="tdu-filter-chips" id="tduFilterChips"></div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Days on Record</div>
+      <div class="stat-val" id="statDays">—</div>
+      <div class="stat-sub" id="statDateRange">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" id="statCurrentLabel">Current Avg Rate (1,000 kWh)</div>
+      <div class="stat-val" id="statCurrentRate">—</div>
+      <div class="stat-change" id="statChange">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">vs Last Week</div>
+      <div class="stat-val" id="statWeekRate">—</div>
+      <div class="stat-change" id="statWeekChange">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">3-Year Rate Range</div>
+      <div class="stat-val" id="statRange">—</div>
+      <div class="stat-sub" id="statRangeSub">across all TDUs</div>
+    </div>
+  </div>
+
+  <!-- CHART CARD -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:0">Average Rate Trends</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div class="filter-group">
+          <div class="filter-label">kWh Bracket</div>
+          <select id="bracketSel" onchange="updateChart()">
+            <option value="avg500">@ 500 kWh</option>
+            <option value="avg1000" selected>@ 1,000 kWh</option>
+            <option value="avg2000">@ 2,000 kWh</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Time Range</div>
+          <div class="range-btns">
+            <button class="range-btn" onclick="setRange(30)">30D</button>
+            <button class="range-btn" onclick="setRange(90)">90D</button>
+            <button class="range-btn" onclick="setRange(180)">6M</button>
+            <button class="range-btn" onclick="setRange(365)">1Y</button>
+            <button class="range-btn active" onclick="setRange(0)">All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div class="filter-label" style="margin-bottom:8px">Service Areas</div>
+      <div class="tdu-chips" id="tduChips"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="rateChart"></canvas>
+    </div>
+  </div>
+
+
+  <!-- TOP 12-MONTH PLANS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:0">Top 3 Most Affordable 12-Month Plans</div>
+      <div class="filter-group">
+        <div class="filter-label">Service Area</div>
+        <select id="topPlansTdu" onchange="renderTopPlans()">
+          <option value="AEP TEXAS CENTRAL">AEP Texas Central</option>
+          <option value="AEP TEXAS NORTH">AEP Texas North</option>
+          <option value="CENTERPOINT ENERGY HOUSTON ELECTRIC LLC">CenterPoint Houston</option>
+          <option value="ONCOR ELECTRIC DELIVERY COMPANY">Oncor</option>
+          <option value="TEXAS-NEW MEXICO POWER COMPANY">Texas-NM Power</option>
+          <option value="LUBBOCK POWER &amp; LIGHT SYSTEM">Lubbock P&amp;L</option>
+        </select>
+      </div>
+    </div>
+    <div class="top-plans-grid" id="topPlansGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-size:13px">
+        No plan data yet. Run your daily script to populate.
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px">Ranked by lowest rate at 1,000 kWh &middot; Updated daily</div>
+  </div>
+
+  <!-- RECENT SNAPSHOT TABLE -->
+  <div class="card">
+    <div class="section-title">Latest Snapshot</div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="snapshotTable"></table>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Average rates calculated daily from PowerToChoose.org data via the Public Utility Commission of Texas.
+    Texas Power Guru is not affiliated with any energy provider and does not collect commissions from any source.
+  </div>
+
+</div>
+
+<script>
+var HISTORY = HISTORY_DATA_PLACEHOLDER;
+
+var TDU_LABELS = {
+  "AEP TEXAS CENTRAL":                       "AEP Texas Central",
+  "AEP TEXAS NORTH":                         "AEP Texas North",
+  "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": "CenterPoint Houston",
+  "ONCOR ELECTRIC DELIVERY COMPANY":         "Oncor",
+  "TEXAS-NEW MEXICO POWER COMPANY":          "Texas-NM Power",
+  "LUBBOCK POWER & LIGHT SYSTEM":            "Lubbock P&L"
+};
+
+var TDU_COLORS = {
+  "AEP TEXAS CENTRAL":                       "#0E4F8B",
+  "AEP TEXAS NORTH":                         "#1A73C8",
+  "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": "#276749",
+  "ONCOR ELECTRIC DELIVERY COMPANY":         "#B7791F",
+  "TEXAS-NEW MEXICO POWER COMPANY":          "#C53030",
+  "LUBBOCK POWER & LIGHT SYSTEM":            "#6B46C1"
+};
+
+var allTdus = Object.keys(TDU_LABELS);
+var activeTdus = allTdus.slice();
+var rangeDays = 0;
+var chart = null;
+
+// ── BUILD TDU CHIPS ──────────────────────────────────────────────────────────
+function buildFilterChips() {
+  var c = document.getElementById('tduFilterChips');
+  var html = '<div class="tdu-filter-chip">' +
+    '<input type="radio" name="tduFilter" id="tf-all" value="ALL" checked onchange="onFilterChange()">' +
+    '<label for="tf-all">All areas</label>' +
+    '</div>';
+  for (var i = 0; i < allTdus.length; i++) {
+    var tdu = allTdus[i];
+    html += '<div class="tdu-filter-chip">' +
+      '<input type="radio" name="tduFilter" id="tf' + i + '" value="' + tdu + '" onchange="onFilterChange()">' +
+      '<label for="tf' + i + '">' + TDU_LABELS[tdu] + '</label>' +
+    '</div>';
+  }
+  c.innerHTML = html;
+}
+
+function getSelectedTdu() {
+  var el = document.querySelector('input[name="tduFilter"]:checked');
+  return el ? el.value : 'ALL';
+}
+
+function onFilterChange() {
+  var sel = getSelectedTdu();
+  if (sel !== 'ALL') {
+    document.getElementById('topPlansTdu').value = sel;
+    renderTopPlans();
+  }
+  updateChart();
+}
+
+function buildChips() {
+  var c = document.getElementById('tduChips');
+  var html = '';
+  for (var i = 0; i < allTdus.length; i++) {
+    var tdu = allTdus[i];
+    var color = TDU_COLORS[tdu];
+    var label = TDU_LABELS[tdu];
+    html += '<div class="tdu-chip">' +
+      '<input type="checkbox" id="chip-' + i + '" checked onchange="toggleTdu(' + "'" + tdu + "'" + ')">' +
+      '<label for="chip-' + i + '" style="border-color:' + color + ';background:' + color + '20;color:' + color + '">' +
+        '<span class="dot" style="background:' + color + '"></span>' + label +
+      '</label>' +
+    '</div>';
+  }
+  c.innerHTML = html;
+}
+
+function toggleTdu(tdu) {
+  var idx = activeTdus.indexOf(tdu);
+  if (idx >= 0) activeTdus.splice(idx, 1);
+  else activeTdus.push(tdu);
+  updateChart();
+}
+
+// ── FILTER SNAPSHOTS BY DATE RANGE ───────────────────────────────────────────
+function getFilteredSnapshots() {
+  var snaps = HISTORY.snapshots;
+  if (rangeDays > 0) {
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - rangeDays);
+    var cutoffStr = cutoff.toISOString().slice(0, 10);
+    snaps = snaps.filter(function(s) { return s.date >= cutoffStr; });
+  }
+  return snaps;
+}
+
+// ── SET RANGE ─────────────────────────────────────────────────────────────────
+function setRange(days) {
+  rangeDays = days;
+  var btns = document.querySelectorAll('.range-btn');
+  var labels = ['30D','90D','6M','1Y','All'];
+  var vals   = [30,90,180,365,0];
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', vals[i] === days);
+  }
+  updateChart();
+}
+
+// ── BUILD CHART ───────────────────────────────────────────────────────────────
+function updateChart() {
+  var bracket = document.getElementById('bracketSel').value;
+  var snaps   = getFilteredSnapshots();
+
+  // Sample down if too many points (show weekly for large ranges)
+  var sampled = snaps;
+  if (snaps.length > 180) {
+    sampled = snaps.filter(function(_, i) { return i % 7 === 0; });
+    // Always include last point
+    if (sampled[sampled.length-1] !== snaps[snaps.length-1]) {
+      sampled.push(snaps[snaps.length-1]);
+    }
+  }
+
+  var labels = sampled.map(function(s) { return s.date; });
+
+  var datasets = [];
+  for (var t = 0; t < allTdus.length; t++) {
+    var tdu = allTdus[t];
+    if (activeTdus.indexOf(tdu) < 0) continue;
+    var color = TDU_COLORS[tdu];
+    var data = sampled.map(function(s) {
+      return s.tdu && s.tdu[tdu] ? s.tdu[tdu][bracket] : null;
+    });
+    datasets.push({
+      label: TDU_LABELS[tdu],
+      data: data,
+      borderColor: color,
+      backgroundColor: color + '18',
+      borderWidth: 2,
+      pointRadius: sampled.length > 60 ? 0 : 3,
+      pointHoverRadius: 5,
+      tension: 0.3,
+      fill: false,
+    });
+  }
+
+  var ctx = document.getElementById('rateChart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { family: 'Inter', size: 12 }, boxWidth: 12, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) + '¢' : '—');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 10,
+            font: { family: 'Inter', size: 11 },
+            color: '#718096',
+          },
+          grid: { color: '#E2E8F0' }
+        },
+        y: {
+          ticks: {
+            font: { family: 'Inter', size: 11 },
+            color: '#718096',
+            callback: function(v) { return v.toFixed(1) + '¢'; }
+          },
+          grid: { color: '#E2E8F0' },
+          title: {
+            display: true,
+            text: 'Avg ¢ per kWh',
+            font: { family: 'Inter', size: 11 },
+            color: '#718096'
+          }
+        }
+      }
+    }
+  });
+
+  updateStats(snaps, bracket);
+  updateTable();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats(snaps, bracket) {
+  if (!snaps.length) return;
+
+  document.getElementById('statDays').textContent = HISTORY.snapshots.length;
+  var first = HISTORY.snapshots[0].date;
+  var last  = HISTORY.snapshots[HISTORY.snapshots.length - 1].date;
+  document.getElementById('statDateRange').textContent = first + ' → ' + last;
+
+  // Current avg — respect TDU filter
+  var latest = snaps[snaps.length - 1];
+  var selectedTdu = getSelectedTdu();
+  var vals = [];
+  if (selectedTdu === 'ALL') {
+    for (var tdu in latest.tdu) {
+      var v = latest.tdu[tdu][bracket];
+      if (v != null) vals.push(v);
+    }
+  } else {
+    var v = latest.tdu[selectedTdu] ? latest.tdu[selectedTdu][bracket] : null;
+    if (v != null) vals.push(v);
+  }
+  var currentAvg = vals.length ? vals.reduce(function(a,b){return a+b;},0) / vals.length : null;
+  document.getElementById('statCurrentRate').textContent = currentAvg ? currentAvg.toFixed(2) + '¢' : '—';
+  document.getElementById('statCurrentLabel').textContent = selectedTdu === 'ALL'
+    ? 'Current avg rate (1,000 kWh)'
+    : TDU_LABELS[selectedTdu] + ' avg rate';
+
+  // Change vs 30 days ago
+  if (snaps.length > 30) {
+    var older = snaps[snaps.length - 31];
+    var olderVals = [];
+    if (selectedTdu === 'ALL') {
+      for (var tdu2 in older.tdu) {
+        var v2 = older.tdu[tdu2][bracket];
+        if (v2 != null) olderVals.push(v2);
+      }
+    } else {
+      var v2 = older.tdu[selectedTdu] ? older.tdu[selectedTdu][bracket] : null;
+      if (v2 != null) olderVals.push(v2);
+    }
+    var olderAvg = olderVals.length ? olderVals.reduce(function(a,b){return a+b;},0) / olderVals.length : null;
+    if (olderAvg && currentAvg) {
+      var diff = currentAvg - olderAvg;
+      var el = document.getElementById('statChange');
+      el.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff.toFixed(2) + '¢ vs 30 days ago';
+      el.className = 'stat-change ' + (diff >= 0 ? 'up' : 'down');
+    }
+  }
+
+  // Change vs last week (7 days ago)
+  var weekEl    = document.getElementById('statWeekRate');
+  var weekChgEl = document.getElementById('statWeekChange');
+  if (snaps.length > 7) {
+    var weekSnap = snaps[snaps.length - 8];
+    var weekVals = [];
+    if (selectedTdu === 'ALL') {
+      for (var tdu4 in weekSnap.tdu) {
+        var v4 = weekSnap.tdu[tdu4][bracket];
+        if (v4 != null) weekVals.push(v4);
+      }
+    } else {
+      var v4 = weekSnap.tdu[selectedTdu] ? weekSnap.tdu[selectedTdu][bracket] : null;
+      if (v4 != null) weekVals.push(v4);
+    }
+    var weekAvg = weekVals.length ? weekVals.reduce(function(a,b){return a+b;},0) / weekVals.length : null;
+    if (weekAvg && currentAvg) {
+      weekEl.textContent = weekAvg.toFixed(2) + '¢';
+      var weekDiff = currentAvg - weekAvg;
+      weekChgEl.textContent = (weekDiff >= 0 ? '▲ +' : '▼ ') + weekDiff.toFixed(2) + '¢ from last week';
+      weekChgEl.className = 'stat-change ' + (weekDiff >= 0 ? 'up' : 'down');
+    }
+  } else {
+    weekEl.textContent = '—';
+    weekChgEl.textContent = 'Not enough data yet';
+    weekChgEl.className = 'stat-change';
+    weekChgEl.style.color = 'var(--muted)';
+  }
+
+  // 3-year range across all TDUs and all snapshots
+  var allVals = [];
+  for (var i = 0; i < HISTORY.snapshots.length; i++) {
+    for (var tdu3 in HISTORY.snapshots[i].tdu) {
+      var v3 = HISTORY.snapshots[i].tdu[tdu3][bracket];
+      if (v3 != null) allVals.push(v3);
+    }
+  }
+  if (allVals.length) {
+    var mn = Math.min.apply(null, allVals);
+    var mx = Math.max.apply(null, allVals);
+    document.getElementById('statRange').textContent = mn.toFixed(1) + '¢ – ' + mx.toFixed(1) + '¢';
+  }
+}
+
+// ── SNAPSHOT TABLE ────────────────────────────────────────────────────────────
+function updateTable() {
+  var snaps = HISTORY.snapshots;
+  if (!snaps.length) return;
+
+  var latest = snaps[snaps.length - 1];
+  var prev   = snaps.length > 1 ? snaps[snaps.length - 2] : null;
+
+  var html = '<thead><tr>' +
+    '<th>Service Area</th>' +
+    '<th>Avg @ 500 kWh</th>' +
+    '<th>Avg @ 1,000 kWh</th>' +
+    '<th>Avg @ 2,000 kWh</th>' +
+    '<th>Plans</th>' +
+    '<th>vs Yesterday</th>' +
+    '</tr></thead><tbody>';
+
+  var tableTdus = selectedTdu === 'ALL' ? allTdus : [selectedTdu];
+  for (var i = 0; i < tableTdus.length; i++) {
+    var tdu = tableTdus[i];
+    var d = latest.tdu[tdu];
+    if (!d) continue;
+
+    var changeHtml = '—';
+    if (prev && prev.tdu[tdu]) {
+      var diff = (d.avg1000 || 0) - (prev.tdu[tdu].avg1000 || 0);
+      if (Math.abs(diff) > 0.001) {
+        var cls = diff > 0 ? 'up' : 'down';
+        changeHtml = '<span class="' + cls + '">' + (diff > 0 ? '▲ +' : '▼ ') + diff.toFixed(2) + '¢</span>';
+      } else {
+        changeHtml = '<span style="color:var(--muted)">— No change</span>';
+      }
+    }
+
+    html += '<tr>' +
+      '<td><strong>' + TDU_LABELS[tdu] + '</strong></td>' +
+      '<td class="rate">' + (d.avg500  != null ? d.avg500.toFixed(2)  + '¢' : '—') + '</td>' +
+      '<td class="rate">' + (d.avg1000 != null ? d.avg1000.toFixed(2) + '¢' : '—') + '</td>' +
+      '<td class="rate">' + (d.avg2000 != null ? d.avg2000.toFixed(2) + '¢' : '—') + '</td>' +
+      '<td>' + (d.count || '—') + '</td>' +
+      '<td>' + changeHtml + '</td>' +
+    '</tr>';
+  }
+
+  html += '</tbody>';
+  document.getElementById('snapshotTable').innerHTML = html;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTopPlans() {
+  var tdu    = document.getElementById('topPlansTdu').value;
+  var snaps  = HISTORY.snapshots;
+  var grid   = document.getElementById('topPlansGrid');
+  var latest = null;
+  for (var i = snaps.length - 1; i >= 0; i--) {
+    if (snaps[i].top12 && snaps[i].top12[tdu] && snaps[i].top12[tdu].length) {
+      latest = snaps[i];
+      break;
+    }
+  }
+  if (!latest) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-size:13px">No plan data yet. Run your daily script to populate.</div>';
+    return;
+  }
+  var plans  = latest.top12[tdu];
+  var ranks  = ['gold','silver','bronze'];
+  var medals = ['1st','2nd','3rd'];
+  var out    = '';
+  for (var i = 0; i < plans.length; i++) {
+    var p       = plans[i];
+    var renew   = p.renewable || '';
+    var isGreen = renew.indexOf('100%') >= 0;
+    var cancel  = (p.cancel || '').replace('Cancellation Fee: ','').replace('Cancellation Fee:','');
+    var enroll  = (p.enrollUrl && p.enrollUrl !== 'nan' && p.enrollUrl !== 'None')
+      ? '<a class="top-plan-enroll" href="' + esc(p.enrollUrl) + '" target="_blank" rel="noopener">Enroll</a>' : '';
+    out += '<div class="top-plan-card ' + ranks[i] + '">' +
+      '<div class="top-plan-rank">' + medals[i] + ' Most Affordable</div>' +
+      '<div class="top-plan-rep">' + esc(p.rep) + '</div>' +
+      '<div class="top-plan-name">' + esc(p.name) + '</div>' +
+      '<div class="top-plan-rate">' + (p.rate1000 != null ? p.rate1000.toFixed(1) : '0') + '<span class="top-plan-rate-sub">c/kWh</span></div>' +
+      '<div class="top-plan-sub">@ 1,000 kWh &middot; 12-month term</div>' +
+      '<div class="top-plan-tags">' +
+        (p.rate500  != null ? '<span class="top-plan-tag">' + p.rate500.toFixed(1)  + 'c @ 500 kWh</span>'   : '') +
+        (p.rate2000 != null ? '<span class="top-plan-tag">' + p.rate2000.toFixed(1) + 'c @ 2,000 kWh</span>' : '') +
+        '<span class="top-plan-tag ' + (isGreen ? 'green' : '') + '">' + esc(renew) + '</span>' +
+        (cancel ? '<span class="top-plan-tag">' + esc(cancel) + '</span>' : '') +
+      '</div>' +
+      enroll +
+    '</div>';
+  }
+  grid.innerHTML = out;
+}
+
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildFilterChips();
+buildChips();
+updateChart();
+renderTopPlans();
+</script>
+</body>
+</html>
