@@ -500,20 +500,38 @@ function getRateForKwh(plan, kwh) {
   return t === 500 ? plan.rate500 : t === 1000 ? plan.rate1000 : plan.rate2000;
 }
 
-function calcAnnualCost(plan, projected) {
-  var tdu = getTduRates(plan.tdu);
-  if (plan.baseFee != null && plan.energyCharge != null) {
-    var total = 0;
-    for (var i = 0; i < projected.length; i++) {
-      // REP base fee + TDU fixed charge + (REP energy charge + TDU variable charge) x kWh
-      total += (plan.baseFee + tdu.fixed) + (plan.energyCharge + tdu.variable) * projected[i];
-    }
-    return total;
+function interpolateRate(plan, kwh) {
+  // Interpolate between the three published rate brackets
+  // These match the EFL exactly and already include all TDU charges
+  var r500  = plan.rate500;
+  var r1000 = plan.rate1000;
+  var r2000 = plan.rate2000;
+  if (r500 == null && r1000 == null && r2000 == null) return null;
+  if (kwh <= 500)  return r500  || r1000 || r2000;
+  if (kwh <= 1000) {
+    if (r500 == null || r1000 == null) return r1000 || r500;
+    var t = (kwh - 500) / 500;
+    return r500 + t * (r1000 - r500);
   }
-  // Fallback: use published ¢/kWh rate (already includes TDU charges per PowerToChoose methodology)
-  var avg = projected.reduce(function(a,b){return a+b;},0) / 12;
-  var rate = getRateForKwh(plan, avg);
-  return rate ? (rate / 100) * projected.reduce(function(a,b){return a+b;},0) : null;
+  if (kwh <= 2000) {
+    if (r1000 == null || r2000 == null) return r1000 || r2000;
+    var t = (kwh - 1000) / 1000;
+    return r1000 + t * (r2000 - r1000);
+  }
+  return r2000 || r1000;
+}
+
+function calcAnnualCost(plan, projected) {
+  var total = 0;
+  var hasRate = false;
+  for (var i = 0; i < projected.length; i++) {
+    var kwh  = projected[i];
+    var rate = interpolateRate(plan, kwh);
+    if (rate == null) return null;
+    total += (rate / 100) * kwh;
+    hasRate = true;
+  }
+  return hasRate ? total : null;
 }
 
 function getRenewPct(plan) {
@@ -701,15 +719,16 @@ function toggleBreakdown(id) {
 }
 
 function buildMonthlyTable(p, cardId) {
-  if (p.baseFee == null || p.energyCharge == null) return '';
+  if (p.rate500 == null && p.rate1000 == null && p.rate2000 == null) return '';
   var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var userInputs = getUserInputs();
-  var tdu = getTduRates(p.tdu);
   var annualTotal = 0;
   var rows = '';
   for (var i = 0; i < 12; i++) {
     var kwh     = Math.round(projectedUsage[i]);
-    var cost    = (p.baseFee + tdu.fixed) + (p.energyCharge + tdu.variable) * kwh;
+    var rate    = interpolateRate(p, kwh);
+    if (rate == null) continue;
+    var cost    = (rate / 100) * kwh;
     annualTotal += cost;
     var isEntered = userInputs[i] !== null && userInputs[i] > 0;
     rows += '<tr>' +
