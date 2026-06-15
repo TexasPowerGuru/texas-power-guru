@@ -660,7 +660,27 @@ function loadFromUrl() {
     }
   }
 
-  recalcUsage();
+  // Force recalc — set projectedUsage directly from URL params
+  var urlInputs = getUserInputs();
+  projectedUsage = projectUsage(urlInputs);
+
+  // Update the usage display
+  var total = projectedUsage.reduce(function(a,b){return a+b;},0);
+  document.getElementById('annualKwh').textContent  = Math.round(total).toLocaleString();
+  document.getElementById('monthlyKwh').textContent = Math.round(total/12).toLocaleString();
+
+  // Update estimated labels
+  for (var j = 0; j < 12; j++) {
+    var mf  = document.getElementById('mf'+j);
+    var est = document.getElementById('e'+j);
+    if (urlInputs[j] === null) {
+      mf.classList.add('est');
+      est.textContent = Math.round(projectedUsage[j]).toLocaleString()+' kWh est.';
+    } else {
+      mf.classList.remove('est');
+      est.textContent = '';
+    }
+  }
 
   if (clientName && tdu) {
     setTimeout(function() {
@@ -670,7 +690,7 @@ function loadFromUrl() {
       document.querySelector('.btn-gen').style.display = 'none';
       var lb = document.getElementById('linkBox');
       if (lb) lb.style.display = 'none';
-    }, 200);
+    }, 50);
   }
 }
 
