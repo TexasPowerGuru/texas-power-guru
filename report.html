@@ -468,6 +468,59 @@ function buildPlanTable(plans, userInputs, accent) {
 }
 
 // ── GENERATE REPORT ──────────────────────────────────────────────────────────
+function buildReportHtml(clientName, tdu, now, annualKwh, avgKwh, entered, moUsageCells, sectionsHtml) {
+  var reportHtml =
+    '<div class="report-header">' +
+      '<h1>⚡ Texas Power Guru</h1>' +
+      '<p>Personalized Electricity Plan Comparison Report</p>' +
+    '</div>' +
+
+    '<div class="info-grid">' +
+      '<div class="info-card">' +
+        '<div class="info-card-label">Client</div>' +
+        '<div class="info-card-val" style="font-size:18px">'+esc(clientName)+'</div>' +
+        '<div class="info-card-sub">'+now+'</div>' +
+      '</div>' +
+      '<div class="info-card">' +
+        '<div class="info-card-label">Service Area</div>' +
+        '<div class="info-card-val" style="font-size:14px">'+esc(TDU_LABELS[tdu]||tdu)+'</div>' +
+      '</div>' +
+      '<div class="info-card">' +
+        '<div class="info-card-label">Projected Usage</div>' +
+        '<div class="info-card-val">'+Math.round(annualKwh).toLocaleString()+' <span style="font-size:12px;font-weight:600">kWh/yr</span></div>' +
+        '<div class="info-card-sub">'+Math.round(avgKwh).toLocaleString()+' kWh/mo avg &nbsp;&middot;&nbsp; '+entered+'/12 months entered</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div class="card-title" style="margin-bottom:10px"><span class="dot">📊</span> Projected Monthly Usage (kWh)</div>' +
+      '<div style="overflow-x:auto">' +
+        '<table class="usage-summary-table" style="min-width:600px">' +
+          '<thead><tr>' +
+            MONTH_ABBR.map(function(m){return '<th>'+m+'</th>';}).join('') +
+            '<th class="annual">Annual</th>' +
+          '</tr></thead>' +
+          '<tbody><tr>' +
+            moUsageCells +
+            '<td class="annual" style="font-weight:800;color:var(--accent);background:var(--accent-light);font-size:14px;padding:8px 6px;text-align:center;border:1px solid var(--border)">'+Math.round(annualKwh).toLocaleString()+'</td>' +
+          '</tr></tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="card">' +
+      sectionsHtml +
+      '<div class="disclaimer">' +
+        'Texas Power Guru is independently operated and not affiliated with any electricity provider. ' +
+        'No commissions collected from any source. All plan data sourced from the Public Utility Commission of Texas (PowerToChoose.org). ' +
+        'Cost estimates use projected monthly usage and published EFL rates. Actual bills may vary. ' +
+        'Always review the Electricity Facts Label (EFL) before enrolling.' +
+      '</div>' +
+    '</div>';
+
+  return reportHtml;
+}
+
 function generateReport() {
   var clientName = document.getElementById('clientName').value.trim();
   var tdu        = document.getElementById('tduSel').value;
@@ -526,55 +579,7 @@ function generateReport() {
     '</div>';
   }).join('');
 
-  var reportHtml =
-    '<div class="report-header">' +
-      '<h1>⚡ Texas Power Guru</h1>' +
-      '<p>Personalized Electricity Plan Comparison Report</p>' +
-    '</div>' +
-
-    '<div class="info-grid">' +
-      '<div class="info-card">' +
-        '<div class="info-card-label">Client</div>' +
-        '<div class="info-card-val" style="font-size:18px">'+esc(clientName)+'</div>' +
-        '<div class="info-card-sub">'+now+'</div>' +
-      '</div>' +
-      '<div class="info-card">' +
-        '<div class="info-card-label">Service Area</div>' +
-        '<div class="info-card-val" style="font-size:14px">'+esc(TDU_LABELS[tdu]||tdu)+'</div>' +
-      '</div>' +
-      '<div class="info-card">' +
-        '<div class="info-card-label">Projected Usage</div>' +
-        '<div class="info-card-val">'+Math.round(annualKwh).toLocaleString()+' <span style="font-size:12px;font-weight:600">kWh/yr</span></div>' +
-        '<div class="info-card-sub">'+Math.round(avgKwh).toLocaleString()+' kWh/mo avg &nbsp;&middot;&nbsp; '+entered+'/12 months entered</div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="card" style="margin-bottom:16px">' +
-      '<div class="card-title" style="margin-bottom:10px"><span class="dot">📊</span> Projected Monthly Usage (kWh)</div>' +
-      '<div style="overflow-x:auto">' +
-        '<table class="usage-summary-table" style="min-width:600px">' +
-          '<thead><tr>' +
-            MONTH_ABBR.map(function(m){return '<th>'+m+'</th>';}).join('') +
-            '<th class="annual">Annual</th>' +
-          '</tr></thead>' +
-          '<tbody><tr>' +
-            moUsageCells +
-            '<td class="annual" style="font-weight:800;color:var(--accent);background:var(--accent-light);font-size:14px;padding:8px 6px;text-align:center;border:1px solid var(--border)">'+Math.round(annualKwh).toLocaleString()+'</td>' +
-          '</tr></tbody>' +
-        '</table>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="card">' +
-      sectionsHtml +
-      '<div class="disclaimer">' +
-        'Texas Power Guru is independently operated and not affiliated with any electricity provider. ' +
-        'No commissions collected from any source. All plan data sourced from the Public Utility Commission of Texas (PowerToChoose.org). ' +
-        'Cost estimates use projected monthly usage and published EFL rates. Actual bills may vary. ' +
-        'Always review the Electricity Facts Label (EFL) before enrolling.' +
-      '</div>' +
-    '</div>';
-
+  var reportHtml = buildReportHtml(clientName, tdu, now, annualKwh, avgKwh, entered, moUsageCells, sectionsHtml);
   document.getElementById('reportContent').innerHTML = reportHtml;
   document.getElementById('reportArea').style.display = 'block';
   showLinkBox();
