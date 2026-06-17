@@ -28,15 +28,17 @@ from datetime import datetime, timezone
 
 # ── CONFIGURATION — edit these paths ──────────────────────────────────────────
 
-EXCEL_PATH   = r"C:\Users\ZazuE\OneDrive - Zazu Energy\SpreadsheetWeb\Published\DualCalculators\AppHosting\PowertoChooseResults.xlsx"
+EXCEL_PATH   = "Premium_Model_App_Test.xlsx"
 SHEET_NAME   = "PowertoChooseResults"
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 
 TEMPLATE_FULL        = os.path.join(SCRIPT_DIR, "template.html")
 TEMPLATE_RESTRICTED  = os.path.join(SCRIPT_DIR, "template_restricted.html")
+TEMPLATE_REPORT      = os.path.join(SCRIPT_DIR, "template_report.html")
 OUTPUT_FULL          = os.path.join(SCRIPT_DIR, "index.html")
 OUTPUT_RESTRICTED    = os.path.join(SCRIPT_DIR, "index_restricted.html")
+OUTPUT_REPORT        = os.path.join(SCRIPT_DIR, "report.html")
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -195,6 +197,8 @@ def build_one(plans, tdu_rates_js, updated_at, template_path, output_path, label
         "Rates sourced from PowerToChoose",
         f"Last updated: {updated_at} · Rates sourced from PowerToChoose"
     )
+    if "LAST_UPDATED_PLACEHOLDER" in html:
+        html = html.replace("LAST_UPDATED_PLACEHOLDER", updated_at)
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
@@ -237,6 +241,10 @@ def build_all(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
     # 4. Build restricted version
     print("\nBuilding restricted version (index_restricted.html) …")
     build_one(plans, tdu_rates_js, updated_at, TEMPLATE_RESTRICTED, OUTPUT_RESTRICTED, "index_restricted.html")
+
+    # 5. Build client report form (report.html)
+    print("\nBuilding client report form (report.html) …")
+    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_REPORT, OUTPUT_REPORT, "report.html")
 
     print(f"\nAll done! Timestamp: {updated_at}")
 
