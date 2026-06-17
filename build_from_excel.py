@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 
 # ── CONFIGURATION — edit these paths ──────────────────────────────────────────
 
-EXCEL_PATH   = r"C:\Users\ZazuE\OneDrive - Zazu Energy\SpreadsheetWeb\Published\DualCalculators\AppHosting\Premium Model App Test.xlsx"
+EXCEL_PATH   = r"C:\Users\ZazuE\OneDrive - Zazu Energy\SpreadsheetWeb\Published\DualCalculators\AppHosting\PowertoChooseResults.xlsx"
 SHEET_NAME   = "PowertoChooseResults"
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
