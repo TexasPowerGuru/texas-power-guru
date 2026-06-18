@@ -225,20 +225,38 @@ select:focus{outline:none;border-color:var(--accent2)}
     <div style="font-size:11px;color:var(--muted);margin-top:12px">Ranked by lowest rate at 1,000 kWh &middot; Updated daily</div>
   </div>
 
-  <!-- RECENT SNAPSHOT TABLE -->
+  <!-- ABOUT / CTA -->
   <div class="card">
-    <div class="section-title">Latest Snapshot</div>
-    <div style="overflow-x:auto">
-      <table class="data-table" id="snapshotTable"></table>
+    <div class="section-title">About Texas Power Guru</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px">
+      Texas Power Guru was founded to simplify the complicated Texas electricity market. Our proprietary and advanced technology allows Texans to search through the hundreds of electricity plans available and determine if you are on the most affordable energy plan available to you based on YOUR projected usage.
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px">
+      Our energy plans are simple, fixed rate plans with no bill credits or gimmicky price structures. All energy plans are sourced from the Public Utility Commission of Texas website, <a href="https://www.powertochoose.org/" target="_blank" rel="noopener" style="color:var(--accent2)">powertochoose.org</a>.
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px">
+      And the best part? We're proud to offer a completely customizable analysis of the energy plans available in your area for an industry best $1.
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:20px">
+      <strong>Ready to unlock savings?</strong> Click the link below to gain access to the best, no gimmick, energy plans available in Texas.
+    </p>
+    <div style="text-align:center">
+      <a href="https://texaspowerguru.github.io/texas-power-guru/" style="display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:8px">
+        ⚡ Shop for Energy Plans based on my usage
+      </a>
     </div>
   </div>
 
   <div class="disclaimer">
-    Average rates calculated daily from PowerToChoose.org data via the Public Utility Commission of Texas.
-    Texas Power Guru is not affiliated with any energy provider and does not collect commissions from any source.
+    ©2025 California Creek Holdings, LLC. All Rights Reserved | PUCT#BR210217
   </div>
 
-</div>
+  </div>
+
+  <!-- RECENT SNAPSHOT TABLE (REMOVED FROM VIEW — kept off-page so other functions referencing it don't error) -->
+  <div style="display:none">
+    <table class="data-table" id="snapshotTable"></table>
+  </div>
 
 <script>
 var HISTORY = HISTORY_DATA_PLACEHOLDER;
@@ -533,7 +551,13 @@ function updateStats(snaps, bracket) {
 // ── SNAPSHOT TABLE ────────────────────────────────────────────────────────────
 function updateTable() {
   var snaps = HISTORY.snapshots;
-  if (!snaps.length) return;
+  if (!snaps.length) {
+    document.getElementById('snapshotTable').innerHTML =
+      '<tbody><tr><td style="text-align:center;padding:24px;color:var(--muted);font-size:13px">' +
+      'No snapshot data yet. Run your daily script to populate.' +
+      '</td></tr></tbody>';
+    return;
+  }
 
   var latest = snaps[snaps.length - 1];
   var prev   = snaps.length > 1 ? snaps[snaps.length - 2] : null;
