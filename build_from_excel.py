@@ -119,6 +119,30 @@ def build_tdu_rates_js(tdu_rates):
     return "\n".join(lines)
 
 
+# ── READ ZIP-TO-TDU MAP ───────────────────────────────────────────────────────
+
+def read_zip_to_tdu(script_dir):
+    """
+    Read zip_to_tdu.json and return a compact JSON string for injection.
+    Returns None if the file is missing (templates fall back to an empty object).
+    Run build_zip_map.py once to generate this file.
+    """
+    zip_map_path = os.path.join(script_dir, "zip_to_tdu.json")
+    if not os.path.exists(zip_map_path):
+        print("  WARNING: zip_to_tdu.json not found.")
+        print("           Run build_zip_map.py once to generate it.")
+        print("           Zip-code lookup will be disabled until then.")
+        return None
+    try:
+        with open(zip_map_path, "r") as f:
+            zip_map = json.load(f)
+        print(f"  Loaded zip_to_tdu.json — {len(zip_map)} zip codes")
+        return json.dumps(zip_map, separators=(",", ":"))
+    except Exception as e:
+        print(f"  WARNING: Could not read zip_to_tdu.json ({e})")
+        return None
+
+
 # ── READ PLAN DATA FROM EXCEL ─────────────────────────────────────────────────
 
 def read_plans(excel_path, sheet_name):
@@ -176,7 +200,7 @@ def read_plans(excel_path, sheet_name):
 
 # ── BUILD ONE HTML FILE ───────────────────────────────────────────────────────
 
-def build_one(plans, tdu_rates_js, updated_at, template_path, output_path, label):
+def build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, template_path, output_path, label):
     """Inject plan data into a template and write the output file."""
     if not os.path.exists(template_path):
         print(f"  ERROR: template not found at '{template_path}'", file=sys.stderr)
@@ -192,6 +216,13 @@ def build_one(plans, tdu_rates_js, updated_at, template_path, output_path, label
     # Inject fresh TDU rates if we got them from Excel
     if tdu_rates_js:
         html = re.sub(r"var TDU_RATES = \{.*?\};", tdu_rates_js, html, flags=re.DOTALL)
+
+    # Inject zip-to-TDU map
+    if zip_to_tdu_js and "ZIP_TO_TDU_PLACEHOLDER" in html:
+        html = html.replace("ZIP_TO_TDU_PLACEHOLDER", zip_to_tdu_js)
+    elif not zip_to_tdu_js and "ZIP_TO_TDU_PLACEHOLDER" in html:
+        # Fall back to empty object so the page still loads
+        html = html.replace("ZIP_TO_TDU_PLACEHOLDER", "{}")
 
     html = html.replace(
         "Rates sourced from PowerToChoose",
@@ -232,19 +263,23 @@ def build_all(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
     for tdu, r in tdu_rates.items():
         print(f"  {tdu}: fixed=${r['fixed']:.2f}  variable=${r['variable']:.6f}")
 
+    # 3. Read zip-to-TDU map
+    print("\nReading zip-to-TDU map …")
+    zip_to_tdu_js = read_zip_to_tdu(SCRIPT_DIR)
+
     updated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # 3. Build full version
+    # 4. Build full version
     print("\nBuilding full version (index.html) …")
-    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_FULL, OUTPUT_FULL, "index.html")
+    build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, TEMPLATE_FULL, OUTPUT_FULL, "index.html")
 
-    # 4. Build restricted version
+    # 5. Build restricted version
     print("\nBuilding restricted version (index_restricted.html) …")
-    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_RESTRICTED, OUTPUT_RESTRICTED, "index_restricted.html")
+    build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, TEMPLATE_RESTRICTED, OUTPUT_RESTRICTED, "index_restricted.html")
 
-    # 5. Build client report form (report.html)
+    # 6. Build client report form (report.html)
     print("\nBuilding client report form (report.html) …")
-    build_one(plans, tdu_rates_js, updated_at, TEMPLATE_REPORT, OUTPUT_REPORT, "report.html")
+    build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, TEMPLATE_REPORT, OUTPUT_REPORT, "report.html")
 
     print(f"\nAll done! Timestamp: {updated_at}")
 
