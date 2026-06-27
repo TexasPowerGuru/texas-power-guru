@@ -45,7 +45,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 
-select,input[type="number"]{
+select,input[type="number"],input[type="text"]{
   width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
   font-size:14px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);
   transition:border-color .15s,box-shadow .15s;appearance:none;-webkit-appearance:none;
@@ -116,12 +116,6 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .results-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .sort-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 .sort-row select{padding:6px 28px 6px 10px;font-size:12px;width:auto}
-
-
-
-
-
-
 
 .plan-card{
   background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
@@ -276,16 +270,12 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
   <div class="panel-body">
 
     <div>
-      <div class="section-label"><span class="dot">1</span> Service Area (TDU)</div>
-      <select id="tdu" onchange="onFilterChange()">
-        <option value="">— Select your area —</option>
-        <option value="AEP TEXAS CENTRAL">AEP Texas Central</option>
-        <option value="AEP TEXAS NORTH">AEP Texas North</option>
-        <option value="CENTERPOINT ENERGY HOUSTON ELECTRIC LLC">CenterPoint Energy Houston</option>
-        <option value="ONCOR ELECTRIC DELIVERY COMPANY">Oncor Electric Delivery</option>
-        <option value="TEXAS-NEW MEXICO POWER COMPANY">Texas-New Mexico Power (TNMP)</option>
-        <option value="LUBBOCK POWER &amp; LIGHT SYSTEM">Lubbock Power &amp; Light</option>
-      </select>
+      <div class="section-label"><span class="dot">1</span> Your Zip Code</div>
+      <input type="text" id="zipInput" placeholder="e.g. 77002" maxlength="5"
+             inputmode="numeric" pattern="[0-9]{5}" autocomplete="postal-code"
+             oninput="onZipInput()" style="letter-spacing:2px">
+      <div id="zipStatus" style="margin-top:7px;font-size:12px;min-height:18px;line-height:1.4"></div>
+      <input type="hidden" id="tdu" value="">
     </div>
 
     <div>
@@ -333,7 +323,7 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 <div class="right-panel">
   <div class="state-box" id="emptyState">
     <div class="state-icon">⚡</div>
-    <div class="state-title">Select your service area to get started</div>
+    <div class="state-title">Enter your zip code to get started</div>
     <div class="state-sub">Plans will appear automatically as you fill in your details on the left.</div>
   </div>
   <div id="resultArea" style="display:none">
@@ -363,6 +353,45 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 <script>
 const PLANS = PLANS_DATA_PLACEHOLDER;
 
+// ── ZIP-TO-TDU MAP (injected by build_from_excel.py) ─────────────────────────
+var ZIP_TO_TDU = ZIP_TO_TDU_PLACEHOLDER;
+
+var TDU_LABELS = {
+  'AEP TEXAS CENTRAL':                       'AEP Texas Central',
+  'AEP TEXAS NORTH':                         'AEP Texas North',
+  'CENTERPOINT ENERGY HOUSTON ELECTRIC LLC': 'CenterPoint Energy Houston',
+  'ONCOR ELECTRIC DELIVERY COMPANY':         'Oncor Electric Delivery',
+  'TEXAS-NEW MEXICO POWER COMPANY':          'Texas-New Mexico Power (TNMP)',
+  'LUBBOCK POWER & LIGHT SYSTEM':            'Lubbock Power & Light'
+};
+
+function onZipInput() {
+  // Strip non-digits and enforce 5-char max
+  var raw = document.getElementById('zipInput').value.replace(/\D/g, '').slice(0, 5);
+  document.getElementById('zipInput').value = raw;
+
+  var status  = document.getElementById('zipStatus');
+  var tduEl   = document.getElementById('tdu');
+  var prevTdu = tduEl.value;
+
+  if (raw.length < 5) {
+    status.textContent = '';
+    tduEl.value = '';
+    if (prevTdu) onFilterChange();
+    return;
+  }
+
+  var tdu = ZIP_TO_TDU[raw];
+  if (tdu) {
+    var label = TDU_LABELS[tdu] || tdu;
+    status.innerHTML = '<span style="color:var(--green);font-weight:600;">✓ ' + label + '</span>';
+    tduEl.value = tdu;
+  } else {
+    status.innerHTML = '<span style="color:#C53030;font-weight:500;">Zip not found or not in a deregulated area</span>';
+    tduEl.value = '';
+  }
+  onFilterChange();
+}
 
 // ── TDU DELIVERY RATES ────────────────────────────────────────────────────────
 // Source: TDURates sheet — Fixed Charge ($/mo) + Variable Charge ($/kWh)
@@ -596,8 +625,6 @@ function onFilterChange() {
     currentPlans[j]._etfFixed = etf.fixed;
   }
 
-
-
   renderPlans();
 }
 
@@ -625,8 +652,6 @@ function renderPlans() {
   var tduCount = PLANS.filter(function(p){ return p.tdu === tdu; }).length;
   document.getElementById('resultsCount').textContent =
     'Showing ' + sorted.length + ' of ' + tduCount + ' plans in your area  ·  ' + PLANS.length + ' total plans across all service areas';
-
-
 
   var avgKwh = projectedUsage.reduce(function(a,b){return a+b;},0) / 12;
   var tier   = getUsageTier(avgKwh);
@@ -762,15 +787,7 @@ function buildMonthlyTable(p, cardId) {
 }
 
 function tduLabel(tdu) {
-  var map = {
-    'AEP TEXAS CENTRAL':'AEP Texas Central',
-    'AEP TEXAS NORTH':'AEP Texas North',
-    'CENTERPOINT ENERGY HOUSTON ELECTRIC LLC':'CenterPoint Energy Houston',
-    'ONCOR ELECTRIC DELIVERY COMPANY':'Oncor Electric Delivery',
-    'TEXAS-NEW MEXICO POWER COMPANY':'Texas-New Mexico Power',
-    'LUBBOCK POWER & LIGHT SYSTEM':'Lubbock Power & Light'
-  };
-  return map[tdu] || tdu;
+  return TDU_LABELS[tdu] || tdu;
 }
 
 function esc(s) {
