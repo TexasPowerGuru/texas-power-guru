@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas Power Guru — Find the Cheapest Electricity Plan in Texas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0A3560;
+    --blue: #1A73C8;
+    --accent: #0E4F8B;
+    --bg: #F0F4F8;
+    --surface: #fff;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --muted: #718096;
+    --green: #276749;
+    --green-bg: #F0FFF4;
+    --green-border: #C6F6D5;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    color: white;
+    padding: 64px 24px 72px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .4px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    max-width: 720px;
+    margin: 0 auto 16px;
+  }
+  .hero h1 span { color: #90CDF4; }
+  .hero p {
+    font-size: clamp(15px, 2vw, 18px);
+    opacity: .88;
+    max-width: 560px;
+    margin: 0 auto 36px;
+    line-height: 1.65;
+  }
+  .hero-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    color: var(--dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 13px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,.22); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1.5px solid rgba(255,255,255,.5);
+    transition: background .15s, border-color .15s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,.1); border-color: white; }
+  .hero-trust {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    opacity: .75;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .2px;
+  }
+  .hero-trust span { display: flex; align-items: center; gap: 5px; }
+
+  /* ── SECTION WRAPPER ── */
+  .section { padding: 56px 24px; }
+  .section-inner { max-width: 860px; margin: 0 auto; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(22px, 3.5vw, 30px);
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -.3px;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 560px;
+    margin: 0 auto 40px;
+    line-height: 1.65;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .step {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dark), var(--blue));
+    color: white;
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .step h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── FREE VS $1 ── */
+  .plans-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 600px) { .plans-compare { grid-template-columns: 1fr; } }
+  .compare-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+    border-top: 4px solid var(--border);
+  }
+  .compare-card.featured { border-top-color: var(--blue); }
+  .compare-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    color: var(--muted);
+  }
+  .compare-card.featured .compare-badge {
+    background: #EBF4FF;
+    color: var(--blue);
+  }
+  .compare-price {
+    font-family: 'Sora', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .compare-price-label { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .compare-card h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .feature-list { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; }
+  .feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .feature-list li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .compare-btn {
+    display: block;
+    text-align: center;
+    padding: 11px 20px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .14s, transform .14s;
+    font-family: 'Inter', sans-serif;
+  }
+  .compare-btn.outline {
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    background: transparent;
+  }
+  .compare-btn.outline:hover { background: #EBF4FF; }
+  .compare-btn.filled {
+    background: var(--accent);
+    color: white;
+    border: none;
+  }
+  .compare-btn.filled:hover { background: var(--dark); }
+
+  /* ── TRUST ── */
+  .trust-section { background: var(--surface); }
+  .trust-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  .trust-item {
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .trust-icon { font-size: 28px; margin-bottom: 10px; }
+  .trust-item h4 {
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .trust-item p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ── BOTTOM CTA ── */
+  .cta-section {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    color: white;
+    padding: 56px 24px;
+    text-align: center;
+  }
+  .cta-section h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(22px, 3.5vw, 30px);
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -.3px;
+  }
+  .cta-section p { opacity: .85; font-size: 15px; margin-bottom: 28px; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--dark);
+    color: rgba(255,255,255,.6);
+    text-align: center;
+    padding: 20px 24px;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .footer a { color: rgba(255,255,255,.6); text-decoration: none; }
+  .footer a:hover { color: white; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">⚡ Free to Use</div>
+  <h1>Find the <span>Cheapest</span> Electricity Plan in Texas.</h1>
+  <p>Stop guessing. See every fixed-rate plan available in your area — ranked by your actual projected cost. No gimmicks, no commissions, no bill credit math.</p>
+  <div class="hero-btns">
+    <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank" class="btn-primary">⚡ Find My Best Rate →</a>
+    <a href="https://texaspowerguru.github.io/texas-power-guru/report.html" target="_blank" class="btn-secondary">📄 Get Full Report — $1</a>
+  </div>
+  <div class="hero-trust">
+    <span>✓ Sourced from PowerToChoose.org</span>
+    <span>✓ PUCT Licensed #BR210217</span>
+    <span>✓ No commissions — ever</span>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-label">Simple Process</div>
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Three steps to know exactly which electricity plan saves you the most money.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Enter Your Zip Code</h3>
+        <p>We identify your service area and pull every available fixed-rate plan automatically.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Tell Us Your Usage</h3>
+        <p>Enter the months you know — we estimate the rest from Texas seasonal averages.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Compare Plans</h3>
+        <p>Plans rank from cheapest to most expensive based on your specific projected usage — not a generic 1,000 kWh estimate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FREE VS $1 -->
+<section class="section" style="background: var(--surface); padding-top: 48px; padding-bottom: 60px;">
+  <div class="section-inner">
+    <div class="section-label">What We Offer</div>
+    <h2 class="section-title">Free Tool vs. Full Report</h2>
+    <p class="section-sub">Start for free. Upgrade to the full report when you're ready to switch.</p>
+    <div class="plans-compare">
+      <div class="compare-card">
+        <div class="compare-badge">Free</div>
+        <div class="compare-price">$0</div>
+        <div class="compare-price-label">Always free</div>
+        <h3>Plan Finder</h3>
+        <ul class="feature-list">
+          <li>All fixed-rate plans in your area</li>
+          <li>Ranked by your projected annual cost</li>
+          <li>Filter by contract length and renewable %</li>
+          <li>Live rates updated daily from PowerToChoose.org</li>
+          <li>Early termination fee comparison</li>
+          <li>Quick monthly cost breakdown per plan</li>
+        </ul>
+        <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank" class="compare-btn outline">Open Plan Finder →</a>
+      </div>
+      <div class="compare-card featured">
+        <div class="compare-badge">Full Report</div>
+        <div class="compare-price">$1</div>
+        <div class="compare-price-label">One-time, per report</div>
+        <h3>Detailed Cost Report</h3>
+        <ul class="feature-list">
+          <li>Everything in the free tool, plus:</li>
+          <li>Full month-by-month cost breakdown</li>
+          <li>Shareable report link — send to a partner or landlord</li>
+          <li>Ideal for anyone actively switching plans</li>
+          <li>Printable format for side-by-side comparison</li>
+          <li>Industry-best $1 — less than a cup of coffee</li>
+        </ul>
+        <a href="https://texaspowerguru.github.io/texas-power-guru/report.html" target="_blank" class="compare-btn filled">Get Full Report — $1 →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="section trust-section">
+  <div class="section-inner">
+    <div class="section-label">Why Trust Us</div>
+    <h2 class="section-title">Independent. Licensed. Transparent.</h2>
+    <p class="section-sub">Texas Power Guru is not affiliated with any electricity provider and earns no commissions — ever.</p>
+    <div class="trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon">🏛️</div>
+        <h4>PUCT Licensed</h4>
+        <p>California Creek Holdings, LLC holds Retail Electric Provider Broker license #BR210217 issued by the Public Utility Commission of Texas.</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">📊</div>
+        <h4>Official Data Source</h4>
+        <p>All plan data is pulled directly from PowerToChoose.org, the official PUCT electricity marketplace, updated daily.</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🚫</div>
+        <h4>Zero Commissions</h4>
+        <p>We don't earn referral fees or commissions from any electricity provider. Our only revenue is the optional $1 report.</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">⚡</div>
+        <h4>No Gimmick Plans</h4>
+        <p>We filter out bill-credit plans, time-of-use plans, and prepaid plans. What you see are straightforward fixed-rate options.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section class="cta-section">
+  <h2>Ready to Stop Overpaying?</h2>
+  <p>It takes less than a minute. No account required.</p>
+  <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank" class="btn-primary" style="display:inline-flex;">⚡ Find My Best Rate →</a>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>© 2025 California Creek Holdings, LLC. All Rights Reserved.</p>
+  <p>PUCT Broker License #BR210217 &nbsp;|&nbsp; <a href="https://www.powertochoose.org/" target="_blank">PowerToChoose.org</a></p>
+</footer>
+
+</body>
+</html>

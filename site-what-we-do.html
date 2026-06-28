@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What We Do — Texas Power Guru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0A3560;
+    --blue: #1A73C8;
+    --accent: #0E4F8B;
+    --bg: #F0F4F8;
+    --surface: #fff;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --muted: #718096;
+    --green: #276749;
+    --green-bg: #F0FFF4;
+    --green-border: #C6F6D5;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+
+  .page-header {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    color: white;
+    padding: 48px 24px 52px;
+    text-align: center;
+  }
+  .page-header h1 { font-family: 'Sora', sans-serif; font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; }
+  .page-header p { opacity: .85; font-size: 15px; max-width: 520px; margin: 0 auto; }
+
+  .content { max-width: 780px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h2 { font-family: 'Sora', sans-serif; font-size: clamp(18px, 3vw, 22px); font-weight: 700; color: var(--dark); margin: 40px 0 12px; letter-spacing: -.2px; }
+  h2:first-of-type { margin-top: 0; }
+  p { margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  .differentiators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .diff-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 20px;
+    border-top: 3px solid var(--blue);
+  }
+  .diff-icon { font-size: 24px; margin-bottom: 12px; }
+  .diff-card h3 { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 7px; }
+  .diff-card p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.6; }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin: 24px 0;
+    font-size: 13px;
+  }
+  .compare-table th {
+    background: var(--dark);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .compare-table th:first-child { border-radius: 0; }
+  .compare-table td { padding: 11px 16px; border-top: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  .compare-table tr:nth-child(even) td { background: var(--bg); }
+  .compare-table .yes { color: var(--green); font-weight: 700; }
+  .compare-table .no { color: #C53030; font-weight: 600; }
+
+  .license-block {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+    margin: 24px 0;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .license-seal {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dark), var(--blue));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .license-block h3 { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .license-block p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.6; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+  .cta-block {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+    color: white;
+    margin-top: 40px;
+  }
+  .cta-block h3 { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  .cta-block p { opacity: .85; font-size: 14px; margin-bottom: 20px; }
+  .cta-block a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    color: var(--dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 24px;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: transform .14s;
+  }
+  .cta-block a:hover { transform: translateY(-1px); }
+
+  .footer { background: var(--dark); color: rgba(255,255,255,.6); text-align: center; padding: 18px 24px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>What We Do</h1>
+  <p>Why we built Texas Power Guru, how it works, and what makes it different from every other electricity comparison tool.</p>
+</div>
+
+<div class="content">
+
+  <h2>The Problem We're Solving</h2>
+  <p>Texas has one of the most competitive electricity markets in the world — but also one of the most confusing. Hundreds of plans from dozens of providers, each structured differently. Bill credits that make cheap-looking plans expensive at your actual usage. Tiered rates. Time-of-use pricing. Gimmicks designed to obscure the true cost.</p>
+  <p>The state's official comparison tool, PowerToChoose.org, shows rates at a generic 1,000 kWh benchmark — which may not reflect your home's usage at all. The result is that most Texans either overpay for electricity or spend hours trying to decode their options.</p>
+  <p>We built Texas Power Guru to fix that.</p>
+
+  <hr class="divider">
+
+  <h2>How It's Different</h2>
+
+  <div class="differentiators">
+    <div class="diff-card">
+      <div class="diff-icon">📐</div>
+      <h3>Usage-Based Ranking</h3>
+      <p>Plans are ranked by your projected annual cost — not a generic 1,000 kWh benchmark. Enter the months you know; we estimate the rest from Texas seasonal data.</p>
+    </div>
+    <div class="diff-card">
+      <div class="diff-icon">🚫</div>
+      <h3>No Gimmick Plans</h3>
+      <p>We automatically filter out bill-credit plans, variable-rate plans, time-of-use plans, and prepaid plans. Only straightforward fixed-rate options make the list.</p>
+    </div>
+    <div class="diff-card">
+      <div class="diff-icon">💰</div>
+      <h3>No Commissions</h3>
+      <p>We earn nothing from the providers we display. There is no financial incentive to show you one plan over another. Our only revenue is the optional $1 detailed report.</p>
+    </div>
+    <div class="diff-card">
+      <div class="diff-icon">🔄</div>
+      <h3>Updated Daily</h3>
+      <p>Plan data is pulled directly from PowerToChoose.org every day. You're always seeing current rates, not cached data from last week.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2>Texas Power Guru vs. The Alternatives</h2>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Texas Power Guru</th>
+        <th>PowerToChoose.org</th>
+        <th>Comparison Sites</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Ranked by your actual usage</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No (1,000 kWh only)</td>
+        <td class="no">✗ Rarely</td>
+      </tr>
+      <tr>
+        <td>Bill-credit plans filtered out</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ No</td>
+      </tr>
+      <tr>
+        <td>Commission-free</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No</td>
+      </tr>
+      <tr>
+        <td>Monthly cost breakdown</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ Rarely</td>
+      </tr>
+      <tr>
+        <td>Updated daily</td>
+        <td class="yes">✓ Yes</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ Varies</td>
+      </tr>
+      <tr>
+        <td>ETF sorting</td>
+        <td class="yes">✓ Yes</td>
+        <td class="no">✗ No</td>
+        <td class="no">✗ Rarely</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <h2>Free Tool vs. $1 Full Report</h2>
+  <p>The <strong>free plan finder</strong> lets you compare all fixed-rate plans in your area, filtered and ranked by your projected cost. It's the fastest way to see if you're overpaying and what a better option looks like.</p>
+  <p>The <strong>$1 detailed report</strong> goes further — it generates a full month-by-month cost breakdown for any plan you're considering, in a shareable format you can send to a partner, landlord, or anyone else involved in the decision. It's ideal when you're actively ready to switch and want a full analysis in hand.</p>
+
+  <hr class="divider">
+
+  <h2>Who We Are</h2>
+  <p>Texas Power Guru is operated by California Creek Holdings, LLC, a licensed Retail Electric Provider Broker in the state of Texas.</p>
+
+  <div class="license-block">
+    <div class="license-seal">🏛️</div>
+    <div>
+      <h3>PUCT Broker License #BR210217</h3>
+      <p>California Creek Holdings, LLC holds a Retail Electric Provider Broker license issued by the Public Utility Commission of Texas. This license authorizes us to provide electricity brokerage services to Texas consumers and businesses — and is one of the key differentiators that allows us to offer analysis unavailable from unlicensed comparison tools.</p>
+    </div>
+  </div>
+
+  <p>We are not affiliated with, endorsed by, or receiving compensation from any electricity provider. Our interest is in giving you the most accurate, unbiased comparison possible — and our business model is structured to keep it that way.</p>
+
+  <div class="cta-block">
+    <h3>See It for Yourself</h3>
+    <p>Find every fixed-rate plan in your area, ranked by your actual projected cost.</p>
+    <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank">⚡ Open Plan Finder →</a>
+  </div>
+
+</div>
+
+<footer class="footer">
+  © 2025 California Creek Holdings, LLC · PUCT #BR210217
+</footer>
+
+</body>
+</html>

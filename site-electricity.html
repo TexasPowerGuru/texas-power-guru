@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electricity in Texas — Texas Power Guru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0A3560;
+    --blue: #1A73C8;
+    --accent: #0E4F8B;
+    --bg: #F0F4F8;
+    --surface: #fff;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --muted: #718096;
+    --green: #276749;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+
+  .page-header {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    color: white;
+    padding: 48px 24px 52px;
+    text-align: center;
+  }
+  .page-header h1 { font-family: 'Sora', sans-serif; font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; }
+  .page-header p { opacity: .85; font-size: 15px; max-width: 520px; margin: 0 auto; }
+
+  .content { max-width: 780px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 700;
+    color: var(--dark);
+    margin: 40px 0 12px;
+    letter-spacing: -.2px;
+  }
+  h2:first-of-type { margin-top: 0; }
+  p { color: var(--text); margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  .info-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--blue);
+  }
+  .info-card h3 { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+  .info-card p { margin: 0; font-size: 14px; }
+
+  .tdu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .tdu-card {
+    background: var(--surface);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 18px 16px;
+    border-top: 3px solid var(--blue);
+  }
+  .tdu-card h4 { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  .tdu-card p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.5; }
+
+  .tip-box {
+    background: #EBF4FF;
+    border: 1px solid #BEE3F8;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .tip-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .tip-box p { margin: 0; font-size: 13px; color: var(--accent); line-height: 1.6; }
+  .tip-box strong { color: var(--dark); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+  .cta-block {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+    color: white;
+    margin-top: 40px;
+  }
+  .cta-block h3 { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  .cta-block p { opacity: .85; font-size: 14px; margin-bottom: 20px; }
+  .cta-block a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    color: var(--dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 24px;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: transform .14s;
+  }
+  .cta-block a:hover { transform: translateY(-1px); }
+
+  .footer {
+    background: var(--dark);
+    color: rgba(255,255,255,.6);
+    text-align: center;
+    padding: 18px 24px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Electricity in Texas</h1>
+  <p>Everything you need to know about the deregulated Texas electricity market — in plain English.</p>
+</div>
+
+<div class="content">
+
+  <h2>What Is Deregulation?</h2>
+  <p>Most states have a single utility company that generates, transmits, and delivers electricity to your home — and you have no choice but to use them. Texas is different. In 2002, Texas deregulated its electricity market, separating the delivery of power from the sale of it.</p>
+  <p>This means that in most of Texas, you can choose your own electricity provider — called a Retail Electric Provider (REP) — and shop for the best rate. Competition between REPs is what drives prices down and gives Texans more options than nearly any other state in the country.</p>
+
+  <div class="info-card">
+    <h3>Quick Distinction</h3>
+    <p><strong>Your TDU</strong> (Transmission and Distribution Utility) owns the power lines and delivers electricity to your home. You cannot choose your TDU — it's determined by where you live. <strong>Your REP</strong> (Retail Electric Provider) is the company that sells you the electricity flowing through those lines. This is what you can shop and switch.</p>
+  </div>
+
+  <hr class="divider">
+
+  <h2>The 6 Deregulated Service Areas</h2>
+  <p>There are six TDU territories in the deregulated Texas market. Your TDU is determined by your zip code:</p>
+
+  <div class="tdu-grid">
+    <div class="tdu-card">
+      <h4>AEP Texas Central</h4>
+      <p>Corpus Christi, Laredo, Victoria, and surrounding South Texas areas</p>
+    </div>
+    <div class="tdu-card">
+      <h4>AEP Texas North</h4>
+      <p>Abilene, San Angelo, Wichita Falls, and surrounding West Texas areas</p>
+    </div>
+    <div class="tdu-card">
+      <h4>CenterPoint Energy</h4>
+      <p>Houston metro area and surrounding communities in Southeast Texas</p>
+    </div>
+    <div class="tdu-card">
+      <h4>Oncor Electric</h4>
+      <p>Dallas–Fort Worth metro, North Texas, and parts of West Texas</p>
+    </div>
+    <div class="tdu-card">
+      <h4>Texas-New Mexico Power</h4>
+      <p>Selected communities across North, West, and Gulf Coast Texas</p>
+    </div>
+    <div class="tdu-card">
+      <h4>Lubbock Power &amp; Light</h4>
+      <p>Lubbock and surrounding areas (joined deregulation in 2021)</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <div class="tip-icon">📍</div>
+    <p><strong>Not sure which TDU you're in?</strong> Enter your zip code in the Texas Power Guru plan finder and we'll identify your service area automatically.</p>
+  </div>
+
+  <hr class="divider">
+
+  <h2>What Is a Fixed-Rate Plan?</h2>
+  <p>A fixed-rate electricity plan locks in your energy charge for the length of your contract — typically 3 to 36 months. Your rate per kilowatt-hour won't change regardless of what happens in the energy market.</p>
+  <p>This is what Texas Power Guru focuses on exclusively. We filter out variable-rate, prepaid, and time-of-use plans — all of which introduce complexity and unpredictability into your bill.</p>
+
+  <div class="info-card">
+    <h3>Why Fixed-Rate?</h3>
+    <p>Variable-rate plans can look attractive in the short term but expose you to price spikes — including the extreme rate increases some customers saw during Winter Storm Uri in 2021. Fixed-rate plans trade flexibility for predictability, which is usually the right call for most Texas households.</p>
+  </div>
+
+  <hr class="divider">
+
+  <h2>Understanding Bill Credits</h2>
+  <p>Many electricity plans advertise very low rates — sometimes as low as 5¢/kWh — but include a catch: the low rate only applies if you use exactly 1,000 or 2,000 kWh in a month. Use more or less, and you lose the bill credit, causing your effective rate to spike.</p>
+  <p>Texas Power Guru filters these plans out entirely. Every plan you see is a straightforward fixed rate — what you see is what you pay.</p>
+
+  <div class="tip-box">
+    <div class="tip-icon">💡</div>
+    <p><strong>The average Texas household uses 1,000–1,400 kWh per month</strong> in summer and as little as 600–700 kWh in mild months. Bill credit plans are specifically designed around these usage thresholds — so always compare the effective rate at your actual usage, not just at 1,000 kWh.</p>
+  </div>
+
+  <hr class="divider">
+
+  <h2>What Is an EFL?</h2>
+  <p>Every electricity plan in Texas is required by law to publish an Electricity Facts Label (EFL) — a standardized one-page document that discloses your rate at 500, 1,000, and 2,000 kWh, all fees, your contract length, and your early termination fee (ETF).</p>
+  <p>Always read the EFL before enrolling in a plan. Texas Power Guru links to the EFL for every plan we show — you'll find the button on each plan card in the plan finder.</p>
+
+  <hr class="divider">
+
+  <h2>Tips for Choosing a Plan</h2>
+  <p><strong>Know your actual usage.</strong> Pull 12 months of bills and enter your kWh usage into the plan finder. Usage-based ranking gives you a far more accurate cost comparison than the generic 1,000 kWh benchmark most sites use.</p>
+  <p><strong>Consider your contract length.</strong> Longer contracts (24–36 months) lock in rates for longer — useful if you think rates will rise. Shorter contracts give you flexibility but expose you to re-shopping more often.</p>
+  <p><strong>Check the ETF.</strong> Early termination fees typically range from $0 to $250+ for fixed-rate plans. If there's any chance you'll move or switch before the contract ends, pay attention to the ETF.</p>
+  <p><strong>Don't over-index on renewable %.</strong> 100% renewable plans often cost only slightly more than standard plans — but not always. Compare the total annual cost first, then decide if the premium is worth it to you.</p>
+
+  <div class="cta-block">
+    <h3>Ready to Find Your Best Plan?</h3>
+    <p>Enter your zip code and see every fixed-rate plan ranked by your actual projected cost.</p>
+    <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank">⚡ Open Plan Finder →</a>
+  </div>
+
+</div>
+
+<footer class="footer">
+  © 2025 California Creek Holdings, LLC · PUCT #BR210217
+</footer>
+
+</body>
+</html>

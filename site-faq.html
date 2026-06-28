@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — Texas Power Guru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0A3560;
+    --blue: #1A73C8;
+    --accent: #0E4F8B;
+    --bg: #F0F4F8;
+    --surface: #fff;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --muted: #718096;
+    --green: #276749;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+
+  .page-header {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    color: white;
+    padding: 48px 24px 52px;
+    text-align: center;
+  }
+  .page-header h1 { font-family: 'Sora', sans-serif; font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; }
+  .page-header p { opacity: .85; font-size: 15px; max-width: 520px; margin: 0 auto; }
+
+  .content { max-width: 780px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  .faq-section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .faq-section-title:first-of-type { margin-top: 0; }
+
+  .faq-item {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 18px 20px;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    transition: background .12s;
+  }
+  .faq-q:hover { background: var(--bg); }
+  .faq-q.open { color: var(--accent); }
+  .faq-arrow {
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: transform .2s;
+    display: inline-block;
+  }
+  .faq-q.open .faq-arrow { transform: rotate(180deg); }
+  .faq-a {
+    display: none;
+    padding: 0 20px 18px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+  }
+  .faq-a.open { display: block; }
+  .faq-a p { margin-bottom: 10px; }
+  .faq-a p:last-child { margin-bottom: 0; }
+  .faq-a a { color: var(--blue); text-decoration: none; }
+  .faq-a a:hover { text-decoration: underline; }
+  .faq-a strong { color: var(--text); }
+
+  .cta-block {
+    background: linear-gradient(135deg, #0A3560 0%, #1A73C8 100%);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+    color: white;
+    margin-top: 40px;
+  }
+  .cta-block h3 { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  .cta-block p { opacity: .85; font-size: 14px; margin-bottom: 20px; }
+  .cta-block a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    color: var(--dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 24px;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: transform .14s;
+  }
+  .cta-block a:hover { transform: translateY(-1px); }
+
+  .footer { background: var(--dark); color: rgba(255,255,255,.6); text-align: center; padding: 18px 24px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Frequently Asked Questions</h1>
+  <p>Answers to the most common questions about Texas electricity and how Texas Power Guru works.</p>
+</div>
+
+<div class="content">
+
+  <!-- ABOUT THE TOOL -->
+  <div class="faq-section-title">About the Tool</div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">Is Texas Power Guru really free?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>Yes. The plan finder is completely free to use — no account, no email, no credit card required. We offer an optional $1 detailed report for users who want a full month-by-month cost breakdown in a shareable format, but the core plan comparison tool costs nothing.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">How is this different from PowerToChoose.org?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>PowerToChoose.org is the state's official marketplace and is a great data source — we pull all of our plan data from there daily. However, it has a few limitations:</p>
+      <p>It ranks plans at a generic 1,000 kWh/month benchmark, which may not match your actual usage. It includes bill-credit plans that look cheap at exactly 1,000 kWh but are expensive at any other usage level. And it doesn't provide a projected annual cost based on seasonal usage patterns.</p>
+      <p>Texas Power Guru filters out gimmick plans, ranks results by your specific projected usage, and shows a month-by-month cost breakdown — giving you a much clearer picture of what you'll actually pay.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">Do you earn commissions from electricity providers?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>No. Texas Power Guru earns zero commissions or referral fees from any electricity provider. We have no financial incentive to show you one plan over another. Our only revenue is the optional $1 detailed report. This is what keeps our comparisons genuinely unbiased.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">How current is the plan data?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>Plan data is pulled from PowerToChoose.org and updated every day. You're always seeing current rates. The timestamp of the last update is shown at the bottom of the plan finder.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">What is the $1 detailed report?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>The detailed report gives you a full month-by-month projected cost breakdown for any plan you're considering, based on your usage inputs. It generates a shareable link you can send to a partner, spouse, or landlord — or save for your own reference when you're ready to switch.</p>
+      <p>It's ideal for people who are actively ready to make a decision and want a complete, printable analysis rather than just a quick comparison. At $1, it's the lowest price in the industry for this level of analysis.</p>
+    </div>
+  </div>
+
+  <!-- TEXAS ELECTRICITY -->
+  <div class="faq-section-title" style="margin-top: 36px;">Texas Electricity</div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">How do I know if I'm in a deregulated area?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>Simply enter your zip code in the plan finder. If plans appear, you're in a deregulated area. If your zip isn't found, you may be served by a co-op or municipal utility (like Austin Energy or CPS Energy in San Antonio), which are not part of the deregulated market and don't offer plan choice.</p>
+      <p>El Paso Electric and utilities serving certain rural areas also remain outside of deregulation.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">What is a TDU and do I have to pay TDU charges?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>Your TDU (Transmission and Distribution Utility) owns and maintains the power lines that deliver electricity to your home. TDU delivery charges are separate from your energy charge and are passed through on your bill — you cannot choose your TDU or avoid these charges.</p>
+      <p>The rates shown in Texas Power Guru are <strong>all-in rates</strong> — they already include TDU delivery charges as published on each plan's EFL. The cost you see is what you can expect to pay, not a pre-TDU number.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">What is a bill credit plan and why do you filter them out?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>A bill credit plan offers a very low advertised rate (sometimes 5–7¢/kWh) but includes a catch: you only receive a credit on your bill if you use exactly a specific amount of electricity — typically 1,000 or 2,000 kWh in a month.</p>
+      <p>Use more or less than that threshold, and you lose the credit. Your effective rate can be two to three times higher than advertised at usage levels outside the threshold. These plans are specifically designed to be difficult to compare accurately.</p>
+      <p>Texas Power Guru filters these out entirely so that every plan you see has a transparent, predictable rate.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">What is an ETF (early termination fee)?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>An early termination fee is a penalty charged if you cancel your electricity contract before it expires. ETFs on fixed-rate plans typically range from $0 (no penalty) to $150–$250 or more for flat-fee structures. Some plans charge a per-remaining-month fee instead.</p>
+      <p>You can sort plans by ETF in the plan finder, which is useful if you think there's any chance you'll move or switch before the contract ends.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">How long does switching electricity providers take?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>Switching is typically seamless. There is no interruption to your electricity service — the same TDU continues to deliver power to your home. The only thing that changes is the company billing you for the energy.</p>
+      <p>Most switches take effect within one to two billing cycles. In some cases you can request an expedited switch date. Your new REP will coordinate the transition with your TDU automatically.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">What should I look for in an EFL?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>The Electricity Facts Label (EFL) is a one-page standardized disclosure required by the PUCT. When reviewing an EFL, pay attention to:</p>
+      <p><strong>Rate at your actual usage level</strong> (not just at 1,000 kWh). <strong>Monthly recurring fees</strong> — some plans have base fees or service fees not captured in the per-kWh rate. <strong>The early termination fee</strong> and contract end date. <strong>Any special conditions</strong> — particularly language around bill credits or minimum usage requirements.</p>
+      <p>Every plan card in Texas Power Guru includes a direct link to that plan's EFL. Always read it before enrolling.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">How often should I shop for a new electricity plan?<span class="faq-arrow">▼</span></button>
+    <div class="faq-a">
+      <p>It's worth checking rates whenever your current contract is nearing its end — typically 30 to 60 days before the expiration date. Many contracts automatically roll to a month-to-month variable rate when they expire, which is usually more expensive.</p>
+      <p>Some people also shop during significant market shifts — such as after a large drop in natural gas prices — to see if locking in a new rate makes sense even if they have remaining contract time (factoring in any ETF).</p>
+    </div>
+  </div>
+
+  <div class="cta-block">
+    <h3>Still Have Questions?</h3>
+    <p>The fastest way to understand your options is to just run the plan finder — it takes less than a minute.</p>
+    <a href="https://texaspowerguru.github.io/texas-power-guru/" target="_blank">⚡ Open Plan Finder →</a>
+  </div>
+
+</div>
+
+<footer class="footer">
+  © 2025 California Creek Holdings, LLC · PUCT #BR210217
+</footer>
+
+<script>
+function toggle(btn) {
+  var answer = btn.nextElementSibling;
+  var isOpen = answer.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-a.open').forEach(function(el) { el.classList.remove('open'); });
+  document.querySelectorAll('.faq-q.open').forEach(function(el) { el.classList.remove('open'); });
+  // Open clicked (if it was closed)
+  if (!isOpen) {
+    answer.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+</script>
+
+</body>
+</html>
