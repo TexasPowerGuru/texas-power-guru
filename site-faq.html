@@ -125,9 +125,41 @@
   .cta-block a:hover { transform: translateY(-1px); }
 
   .footer { background: var(--dark); color: rgba(255,255,255,.6); text-align: center; padding: 18px 24px; font-size: 12px; }
+
+  /* ── NAV ── */
+  .site-nav{background:#071e38;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(255,255,255,.08);}
+  .nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px;}
+  .nav-logo{color:white;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.2px;}
+  .nav-links{list-style:none;display:flex;align-items:center;gap:2px;margin:0;padding:0;}
+  .nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:6px;transition:all .12s;white-space:nowrap;}
+  .nav-links a:hover,.nav-links a.active{background:rgba(255,255,255,.12);color:white;}
+  .nav-links .nav-cta{background:white;color:#0A3560 !important;font-weight:700;margin-left:8px;}
+  .nav-links .nav-cta:hover{background:rgba(255,255,255,.9);}
+  .nav-toggle{display:none;background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;}
+  @media(max-width:680px){
+    .nav-toggle{display:block;}
+    .nav-links{display:none;position:absolute;top:54px;left:0;right:0;background:#071e38;flex-direction:column;align-items:stretch;padding:8px 16px 16px;border-top:1px solid rgba(255,255,255,.1);}
+    .nav-links.open{display:flex;}
+    .nav-links a{padding:10px 12px;}
+    .nav-links .nav-cta{margin-left:0;margin-top:6px;text-align:center;}
+  }
 </style>
 </head>
 <body>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="site-home.html">⚡ Texas Power Guru</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">☰</button>
+    <ul class="nav-links">
+      <li><a href="site-home.html">Home</a></li>
+      <li><a href="site-electricity.html">Electricity in Texas</a></li>
+      <li><a href="site-what-we-do.html">What We Do</a></li>
+      <li><a href="site-faq.html">FAQ</a></li>
+      <li><a href="index.html" class="nav-cta">Find My Plan →</a></li>
+    </ul>
+  </div>
+</nav>
+<script>(function(){var p=location.pathname.split('/').pop()||'site-home.html';document.querySelectorAll('.nav-links a:not(.nav-cta)').forEach(function(a){if(a.getAttribute('href')===p)a.classList.add('active');});})();</script>
 
 <div class="page-header">
   <h1>Frequently Asked Questions</h1>
