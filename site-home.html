@@ -24,6 +24,8 @@
     --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
     --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
   }
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
   body {
     font-family: 'Inter', sans-serif;
     background: var(--bg);
@@ -460,5 +462,9 @@
   <p>PUCT Broker License #BR210217 &nbsp;|&nbsp; <a href="https://www.powertochoose.org/" target="_blank">PowerToChoose.org</a></p>
 </footer>
 
+<script>
+(function(){function h(){window.parent.postMessage(document.documentElement.scrollHeight,'*');}
+window.addEventListener('load',h);window.addEventListener('resize',h);setTimeout(h,600);})();
+</script>
 </body>
 </html>

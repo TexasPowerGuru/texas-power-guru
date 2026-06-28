@@ -21,6 +21,8 @@
     --radius: 12px;
     --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
   }
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
 
   .page-header {
@@ -227,5 +229,9 @@
   © 2025 California Creek Holdings, LLC · PUCT #BR210217
 </footer>
 
+<script>
+(function(){function h(){window.parent.postMessage(document.documentElement.scrollHeight,'*');}
+window.addEventListener('load',h);window.addEventListener('resize',h);setTimeout(h,600);})();
+</script>
 </body>
 </html>
