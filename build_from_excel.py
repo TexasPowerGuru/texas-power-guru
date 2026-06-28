@@ -3,7 +3,7 @@ Texas Power Guru — Excel to HTML Builder
 =========================================
 Reads your updated Excel file and builds TWO versions of the app:
 
-  index.html            — full version (plan name, enroll link, EFL shown)
+  plan-finder.html      — full version (plan name, enroll link, EFL shown)
   index_restricted.html — restricted version (plan name, enroll link, EFL hidden)
 
 HOW TO USE:
@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 
 # ── CONFIGURATION — edit these paths ──────────────────────────────────────────
 
-EXCEL_PATH   = "Premium_Model_App_Test.xlsx"
+EXCEL_PATH   = r"C:\Users\ZazuE\OneDrive - Zazu Energy\SpreadsheetWeb\Published\DualCalculators\AppHosting\PowertoChooseResults.xlsx"
 SHEET_NAME   = "PowertoChooseResults"
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -36,7 +36,7 @@ SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_FULL        = os.path.join(SCRIPT_DIR, "template.html")
 TEMPLATE_RESTRICTED  = os.path.join(SCRIPT_DIR, "template_restricted.html")
 TEMPLATE_REPORT      = os.path.join(SCRIPT_DIR, "template_report.html")
-OUTPUT_FULL          = os.path.join(SCRIPT_DIR, "index.html")
+OUTPUT_FULL          = os.path.join(SCRIPT_DIR, "plan-finder.html")
 OUTPUT_RESTRICTED    = os.path.join(SCRIPT_DIR, "index_restricted.html")
 OUTPUT_REPORT        = os.path.join(SCRIPT_DIR, "report.html")
 
@@ -270,8 +270,8 @@ def build_all(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
     updated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
     # 4. Build full version
-    print("\nBuilding full version (index.html) …")
-    build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, TEMPLATE_FULL, OUTPUT_FULL, "index.html")
+    print("\nBuilding full version (plan-finder.html) …")
+    build_one(plans, tdu_rates_js, zip_to_tdu_js, updated_at, TEMPLATE_FULL, OUTPUT_FULL, "plan-finder.html")
 
     # 5. Build restricted version
     print("\nBuilding restricted version (index_restricted.html) …")
