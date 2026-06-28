@@ -196,11 +196,11 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .btn-print{
   padding:9px 14px;background:transparent;color:var(--muted);
   border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;
-  cursor:pointer;text-align:center;transition:all .14s;
+  cursor:pointer;text-align:center;transition:background .14s,color .14s;
   display:flex;align-items:center;justify-content:center;gap:5px;
   font-family:'Inter',sans-serif;
 }
-.btn-print:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.btn-print:hover{background:var(--surface2);color:var(--text)}
 
 .state-box{
   background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
@@ -284,18 +284,18 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 <body>
 <nav class="site-nav">
   <div class="nav-inner">
-    <a class="nav-logo" href="site-home.html">⚡ Texas Power Guru</a>
+    <a class="nav-logo" href="index.html">⚡ Texas Power Guru</a>
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">☰</button>
     <ul class="nav-links">
-      <li><a href="site-home.html">Home</a></li>
+      <li><a href="index.html">Home</a></li>
       <li><a href="site-electricity.html">Electricity in Texas</a></li>
       <li><a href="site-what-we-do.html">What We Do</a></li>
       <li><a href="site-faq.html">FAQ</a></li>
-      <li><a href="index.html" class="nav-cta nav-active-plan">Find My Plan →</a></li>
+      <li><a href="plan-finder.html" class="nav-cta active">Find My Plan →</a></li>
     </ul>
   </div>
 </nav>
-<script>(function(){var p=location.pathname.split('/').pop();if(p===''||p==='index.html'){var c=document.querySelector('.nav-active-plan');if(c){c.style.background='#0E4F8B';c.style.color='white';}}else{document.querySelectorAll('.nav-links a:not(.nav-cta)').forEach(function(a){if(a.getAttribute('href')===p)a.classList.add('active');});}})();</script>
+
 <div class="page">
 
 <!-- LEFT PANEL -->
@@ -624,7 +624,7 @@ function parseCancelFee(feeStr) {
 
 // ── FILTER + RENDER ───────────────────────────────────────────────────────────
 var currentPlans = [];
-var sortedPlans  = [];
+var sortedPlans = [];
 
 function onFilterChange() {
   var tdu = document.getElementById('tdu').value;
@@ -689,6 +689,8 @@ function renderPlans() {
     return 0;
   });
 
+  sortedPlans = sorted;
+
   var tdu = document.getElementById('tdu').value;
   var tduCount = PLANS.filter(function(p){ return p.tdu === tdu; }).length;
   document.getElementById('resultsCount').textContent =
@@ -703,7 +705,6 @@ function renderPlans() {
     return;
   }
 
-  sortedPlans = sorted;
   var html = '';
   for (var i = 0; i < sorted.length; i++) {
     html += buildPlanCard(sorted[i], i, tier);
@@ -789,130 +790,6 @@ function toggleBreakdown(id) {
   }
 }
 
-function printPlan(rank) {
-  var p = sortedPlans[rank];
-  if (!p) return;
-
-  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var userInputs  = getUserInputs();
-  var annualTotal = 0;
-  var monthRows   = '';
-
-  for (var i = 0; i < 12; i++) {
-    var kwh  = Math.round(projectedUsage[i]);
-    var rate = interpolateRate(p, kwh);
-    if (rate == null) continue;
-    var cost = (rate / 100) * kwh;
-    annualTotal += cost;
-    var entered = userInputs[i] !== null && userInputs[i] > 0;
-    monthRows += '<tr>' +
-      '<td>' + MONTH_NAMES[i] + '</td>' +
-      '<td class="num">' + kwh.toLocaleString() + ' kWh' + (entered ? '' : '*') + '</td>' +
-      '<td class="num' + (entered ? '' : ' est') + '">$' + cost.toFixed(2) + '</td>' +
-    '</tr>';
-  }
-
-  var renewPct = getRenewPct(p);
-  var etfLine;
-  if (p._etfFixed && p._etfAmt === 0) { etfLine = 'None'; }
-  else if (p._etfFixed) { etfLine = '$' + (p._etfAmt % 1 === 0 ? p._etfAmt.toFixed(0) : p._etfAmt.toFixed(2)); }
-  else { var m = p.cancelFee.match(/\$(\d+)/); etfLine = (m ? '$' + m[1] : 'Variable') + ' per remaining month'; }
-
-  var eflBlock = (p.eflUrl && p.eflUrl !== 'nan' && p.eflUrl !== 'None')
-    ? '<div style="background:#FFF8E1;border:2px solid #F6C90E;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
-      '<div style="font-size:12px;font-weight:700;color:#92670A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⚠️ Important — Electricity Facts Label (EFL)</div>' +
-      '<p style="font-size:13px;color:#1A202C;margin-bottom:10px;line-height:1.6;">The EFL is a legally required disclosure that lists all rates, fees, and contract terms for this plan. <strong>Always review the EFL before enrolling.</strong></p>' +
-      '<a href="' + esc(p.eflUrl) + '" style="display:block;color:#0E4F8B;font-size:12px;word-break:break-all;margin-bottom:12px;">' + esc(p.eflUrl) + '</a>' +
-      '<div style="background:#FEF3C7;border-radius:6px;padding:10px 12px;font-size:12px;color:#92670A;line-height:1.6;">' +
-        '📋 <strong>Recommendation:</strong> At the time of enrollment, print or save a copy of the EFL for your records. Your provider is required to honor the terms disclosed in the EFL at the time you enrolled.' +
-      '</div>' +
-    '</div>'
-    : '';
-
-  var enrollBlock = (p.enrollUrl && p.enrollUrl !== 'nan' && p.enrollUrl !== 'None')
-    ? '<div style="margin-top:8px;font-size:12px;color:#555;">Enroll online: <a href="' + esc(p.enrollUrl) + '">' + esc(p.enrollUrl) + '</a></div>'
-    : '';
-
-  var phoneBlock = (p.phone && p.phone !== 'nan')
-    ? '<div style="margin-top:4px;font-size:12px;color:#555;">Enroll by phone: ' + esc(p.phone) + '</div>'
-    : '';
-
-  var hasEst = userInputs.some(function(v){ return v === null; });
-  var printDate = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
-
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-  '<title>Plan Summary — ' + esc(p.name) + '</title>' +
-  '<style>' +
-    '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap");' +
-    '*{box-sizing:border-box;margin:0;padding:0}' +
-    'body{font-family:Inter,sans-serif;font-size:13px;color:#1A202C;background:white;padding:32px 40px;max-width:720px;margin:0 auto}' +
-    '.header{background:#0A3560;color:white;padding:18px 24px;border-radius:10px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}' +
-    '.logo{font-family:Sora,sans-serif;font-size:18px;font-weight:800;letter-spacing:-.2px}' +
-    '.print-date{font-size:11px;opacity:.75}' +
-    '.cost-box{background:#EBF4FF;border:1.5px solid #BEE3F8;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}' +
-    '.plan-name{font-family:Sora,sans-serif;font-size:18px;font-weight:800;color:#0A3560;margin-bottom:3px}' +
-    '.plan-rep{font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}' +
-    '.annual{font-family:Sora,sans-serif;font-size:28px;font-weight:800;color:#0E4F8B}' +
-    '.monthly{font-size:13px;color:#276749;font-weight:600;margin-top:2px}' +
-    '.section{margin-bottom:20px}' +
-    '.section-title{font-size:10px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E2E8F0}' +
-    '.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}' +
-    '.meta-item{background:#F7FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 12px}' +
-    '.meta-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px}' +
-    '.meta-val{font-size:14px;font-weight:700;color:#1A202C}' +
-    'table{width:100%;border-collapse:collapse;font-size:12px}' +
-    'th{background:#0A3560;color:white;padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px}' +
-    'th.num,td.num{text-align:right}' +
-    'td{padding:6px 10px;border-top:1px solid #E2E8F0;color:#1A202C}' +
-    'tr:nth-child(even) td{background:#F7FAFC}' +
-    'td.est{color:#1A73C8;font-style:italic}' +
-    'tfoot td{background:#EBF4FF;font-weight:700;color:#0E4F8B;border-top:2px solid #0E4F8B}' +
-    '.efl-link{display:inline-block;color:#0E4F8B;font-size:12px;word-break:break-all;margin-top:4px}' +
-    '.disclaimer{font-size:10px;color:#A0AEC0;margin-top:24px;line-height:1.6;border-top:1px solid #E2E8F0;padding-top:12px}' +
-    '.no-print{text-align:center;margin-bottom:20px}' +
-    '.print-btn{background:#0A3560;color:white;border:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif}' +
-    '@media print{.no-print{display:none}body{padding:16px}}' +
-  '</style></head><body>' +
-  '<div class="no-print"><button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button></div>' +
-  '<div class="header"><div class="logo">⚡ Texas Power Guru</div><div class="print-date">Generated ' + printDate + '</div></div>' +
-  '<div class="plan-rep">' + esc(p.rep) + '</div>' +
-  '<div class="plan-name">' + esc(p.name) + '</div>' +
-  '<div class="cost-box">' +
-    '<div>' +
-      '<div style="font-size:11px;color:#718096;font-weight:600;margin-bottom:4px">Projected Annual Cost</div>' +
-      '<div class="annual">' + (p._annual ? '$' + Math.round(p._annual).toLocaleString() : '—') + '</div>' +
-      '<div class="monthly">' + (p._annual ? '~$' + Math.round(p._annual/12) + '/mo avg' : '') + '</div>' +
-    '</div>' +
-    '<div style="text-align:right">' +
-      '<div style="font-size:11px;color:#718096;font-weight:600;margin-bottom:4px">Avg Rate</div>' +
-      '<div style="font-size:20px;font-weight:800;color:#0E4F8B">' + (p._avgRate ? p._avgRate.toFixed(1) + '¢/kWh' : '—') + '</div>' +
-    '</div>' +
-  '</div>' +
-  '<div class="meta-grid">' +
-    '<div class="meta-item"><div class="meta-label">Contract Term</div><div class="meta-val">' + p.term + ' months</div></div>' +
-    '<div class="meta-item"><div class="meta-label">Renewable</div><div class="meta-val">' + esc(p.renewable) + '</div></div>' +
-    '<div class="meta-item"><div class="meta-label">Early Termination</div><div class="meta-val">' + etfLine + '</div></div>' +
-    '<div class="meta-item"><div class="meta-label">Rate @ 500 kWh</div><div class="meta-val">' + (p.rate500 != null ? p.rate500.toFixed(1) + '¢' : '—') + '</div></div>' +
-    '<div class="meta-item"><div class="meta-label">Rate @ 1,000 kWh</div><div class="meta-val">' + (p.rate1000 != null ? p.rate1000.toFixed(1) + '¢' : '—') + '</div></div>' +
-    '<div class="meta-item"><div class="meta-label">Rate @ 2,000 kWh</div><div class="meta-val">' + (p.rate2000 != null ? p.rate2000.toFixed(1) + '¢' : '—') + '</div></div>' +
-  '</div>' +
-  '<div class="section"><div class="section-title">Projected Monthly Costs</div>' +
-  '<table><thead><tr><th>Month</th><th class="num">Usage</th><th class="num">Est. Cost</th></tr></thead>' +
-  '<tbody>' + monthRows + '</tbody>' +
-  '<tfoot><tr><td colspan="2">Annual Total</td><td class="num">$' + annualTotal.toFixed(2) + '</td></tr></tfoot>' +
-  '</table>' +
-  (hasEst ? '<div style="font-size:10px;color:#A0AEC0;margin-top:6px;">* Months marked with an asterisk are estimated from Texas seasonal averages based on your entered usage months.</div>' : '') +
-  '</div>' +
-  eflBlock + enrollBlock + phoneBlock +
-  '<div class="disclaimer">Rates sourced from PowerToChoose.org. Annual cost estimates apply each plan\'s energy charge to your projected monthly usage and do not include taxes or utility deposit requirements. Actual bills will vary. Always review the Electricity Facts Label (EFL) before enrolling in any plan. Texas Power Guru is operated by California Creek Holdings, LLC — PUCT Broker License #BR210217.</div>' +
-  '</body></html>';
-
-  var w = window.open('', '_blank', 'width=800,height=900');
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-}
-
 function buildMonthlyTable(p, cardId) {
   if (p.rate500 == null && p.rate1000 == null && p.rate2000 == null) return '';
   var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -954,6 +831,109 @@ function buildMonthlyTable(p, cardId) {
   '</div>';
 }
 
+// ── PRINT / SAVE ──────────────────────────────────────────────────────────────
+function printPlan(rank) {
+  var p = sortedPlans[rank];
+  if (!p) return;
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var userInputs = getUserInputs();
+  var tableRows = '';
+  var annualTotal = 0;
+  for (var i = 0; i < 12; i++) {
+    var kwh  = Math.round(projectedUsage[i]);
+    var rate = interpolateRate(p, kwh);
+    if (rate == null) continue;
+    var cost = (rate / 100) * kwh;
+    annualTotal += cost;
+    var isEntered = userInputs[i] !== null && userInputs[i] > 0;
+    tableRows += '<tr>' +
+      '<td>' + ABBR[i] + '</td>' +
+      '<td style="text-align:right;color:' + (isEntered ? '#1A202C' : '#1A73C8') + ';font-style:' + (isEntered ? 'normal' : 'italic') + ';">' +
+        kwh.toLocaleString() + ' kWh' + (isEntered ? '' : '*') +
+      '</td>' +
+      '<td style="text-align:right;font-weight:700;color:#0E4F8B;">$' + cost.toFixed(2) + '</td>' +
+    '</tr>';
+  }
+
+  var hasEstimates = userInputs.some(function(v){ return v === null; });
+
+  var eflBlock = (p.eflUrl && p.eflUrl !== 'nan' && p.eflUrl !== 'None')
+    ? '<div style="background:#FFF8E1;border:2px solid #F6C90E;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
+        '<div style="font-size:12px;font-weight:700;color:#92670A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⚠️ Important — Electricity Facts Label (EFL)</div>' +
+        '<p style="font-size:13px;color:#1A202C;margin-bottom:10px;line-height:1.6;">The EFL is a legally required disclosure document that lists your exact rate at 500, 1,000, and 2,000 kWh, all fees, contract length, and early termination fee. <strong>Always review the EFL before enrolling.</strong></p>' +
+        '<a href="' + esc(p.eflUrl) + '" style="font-size:12px;color:#0E4F8B;word-break:break-all;">' + esc(p.eflUrl) + '</a>' +
+        '<div style="background:#FEF3C7;border-radius:7px;padding:10px 14px;margin-top:12px;font-size:12px;color:#92670A;line-height:1.6;">📋 <strong>Recommendation:</strong> At the time of enrollment, print or save a copy of the EFL for your records. Your provider is required to honor the terms disclosed in the EFL at the time you enrolled.</div>' +
+      '</div>'
+    : '';
+
+  var rankLabel = rank === 0 ? '🥇 #1 Best Value' : rank === 1 ? '🥈 #2' : rank === 2 ? '🥉 #3' : '#' + (rank + 1);
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(p.name) + ' — Texas Power Guru</title>' +
+    '<style>' +
+      'body{font-family:\'Inter\',Arial,sans-serif;background:#fff;color:#1A202C;padding:32px;max-width:720px;margin:0 auto;font-size:14px;line-height:1.6;}' +
+      'h1{font-size:22px;font-weight:800;color:#0A3560;margin-bottom:4px;}' +
+      '.sub{font-size:13px;color:#718096;margin-bottom:24px;}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:8px;}' +
+      'th{background:#0A3560;color:white;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;text-align:left;}' +
+      'th:not(:first-child){text-align:right;}' +
+      'td{padding:7px 12px;border-bottom:1px solid #E2E8F0;font-size:13px;}' +
+      'tr:nth-child(even) td{background:#F7FAFC;}' +
+      'tfoot td{background:#EBF4FF;font-weight:700;color:#0E4F8B;border-top:2px solid #0E4F8B;}' +
+      '.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#F0F4F8;color:#718096;border:1px solid #E2E8F0;margin-right:5px;}' +
+      '@media print{body{padding:16px;}button{display:none!important;}}' +
+    '</style></head><body>' +
+    '<div style="background:linear-gradient(135deg,#0A3560,#1A73C8);color:white;padding:20px 24px;border-radius:10px;margin-bottom:24px;">' +
+      '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.75;margin-bottom:6px;">Texas Power Guru · Plan Summary</div>' +
+      '<h1 style="color:white;margin:0 0 4px;">' + esc(p.name) + '</h1>' +
+      '<div style="font-size:13px;opacity:.85;">' + esc(p.rep) + ' &nbsp;·&nbsp; ' + rankLabel + ' in your results</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">' +
+      '<div style="flex:1;min-width:150px;background:#F0F4F8;border-radius:8px;padding:14px 16px;text-align:center;">' +
+        '<div style="font-size:11px;color:#718096;text-transform:uppercase;letter-spacing:.4px;">Projected Annual</div>' +
+        '<div style="font-size:26px;font-weight:800;color:#0E4F8B;">' + (p._annual ? '$' + Math.round(p._annual).toLocaleString() : '—') + '</div>' +
+      '</div>' +
+      '<div style="flex:1;min-width:150px;background:#F0F4F8;border-radius:8px;padding:14px 16px;text-align:center;">' +
+        '<div style="font-size:11px;color:#718096;text-transform:uppercase;letter-spacing:.4px;">Avg Monthly</div>' +
+        '<div style="font-size:26px;font-weight:800;color:#276749;">' + (p._annual ? '~$' + Math.round(p._annual / 12) : '—') + '</div>' +
+      '</div>' +
+      '<div style="flex:1;min-width:150px;background:#F0F4F8;border-radius:8px;padding:14px 16px;text-align:center;">' +
+        '<div style="font-size:11px;color:#718096;text-transform:uppercase;letter-spacing:.4px;">Contract</div>' +
+        '<div style="font-size:26px;font-weight:800;color:#1A202C;">' + p.term + ' mo</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:20px;">' +
+      '<span class="tag">' + esc(p.renewable) + '</span>' +
+      '<span class="tag">ETF: ' + (p._etfFixed && p._etfAmt === 0 ? 'None' : p._etfFixed ? '$' + p._etfAmt : 'Variable') + '</span>' +
+      (p.rate500 != null ? '<span class="tag">500 kWh: ' + p.rate500.toFixed(1) + '¢</span>' : '') +
+      (p.rate1000 != null ? '<span class="tag">1,000 kWh: ' + p.rate1000.toFixed(1) + '¢</span>' : '') +
+      (p.rate2000 != null ? '<span class="tag">2,000 kWh: ' + p.rate2000.toFixed(1) + '¢</span>' : '') +
+    '</div>' +
+    eflBlock +
+    '<h2 style="font-size:15px;font-weight:700;color:#0A3560;margin-bottom:12px;">Projected Monthly Cost Breakdown</h2>' +
+    '<table>' +
+      '<thead><tr><th>Month</th><th style="text-align:right;">Usage</th><th style="text-align:right;">Est. Cost</th></tr></thead>' +
+      '<tbody>' + tableRows + '</tbody>' +
+      '<tfoot><tr><td colspan="2">Annual Total</td><td style="text-align:right;">$' + annualTotal.toFixed(2) + '</td></tr></tfoot>' +
+    '</table>' +
+    (hasEstimates ? '<p style="font-size:11px;color:#718096;margin-top:6px;">* Estimated from Texas seasonal averages based on your entered months.</p>' : '') +
+    '<div style="margin-top:28px;padding:14px 16px;background:#F0F4F8;border-radius:8px;font-size:11px;color:#718096;line-height:1.7;">' +
+      'Generated by Texas Power Guru (texaspowerguru.com) · California Creek Holdings, LLC · PUCT #BR210217<br>' +
+      'Cost estimates are based on your projected usage and may differ from actual bills. Always review the EFL before enrolling.' +
+    '</div>' +
+    '<div style="margin-top:16px;text-align:center;">' +
+      '<button onclick="window.print()" style="padding:10px 28px;background:#0A3560;color:white;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print / Save as PDF</button>' +
+    '</div>' +
+    '</body></html>';
+
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
 function tduLabel(tdu) {
   return TDU_LABELS[tdu] || tdu;
 }
@@ -971,4 +951,3 @@ buildMonthGrid();
 buildTermChips('');
 </script>
 </body>
-</html>
