@@ -204,45 +204,6 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 
 .disclaimer{font-size:11px;color:var(--muted);text-align:center;padding:14px;line-height:1.6;margin-top:6px}
 
-.monthly-breakdown{margin-bottom:10px}
-.breakdown-toggle{
-  display:flex;align-items:center;justify-content:space-between;
-  width:100%;padding:8px 10px;
-  background:var(--surface2);border:1px solid var(--border);border-radius:7px;
-  font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;
-  font-family:'Inter',sans-serif;transition:background .12s;
-}
-.breakdown-toggle:hover{background:var(--accent-light)}
-.breakdown-toggle .arrow{
-  font-size:10px;transition:transform .2s;display:inline-block;
-}
-.breakdown-toggle.open .arrow{transform:rotate(180deg)}
-.breakdown-table-wrap{
-  display:none;
-  border:1px solid var(--border);border-top:none;
-  border-radius:0 0 7px 7px;overflow:hidden;
-}
-.breakdown-table-wrap.open{display:block}
-.breakdown-table{width:100%;border-collapse:collapse;font-size:12px}
-.breakdown-table th{
-  background:var(--surface2);padding:6px 10px;
-  font-size:10px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.4px;text-align:right;
-}
-.breakdown-table th:first-child{text-align:left}
-.breakdown-table td{
-  padding:6px 10px;border-top:1px solid var(--border);
-  text-align:right;color:var(--text);font-weight:500;
-}
-.breakdown-table td:first-child{text-align:left;font-weight:600;color:var(--muted)}
-.breakdown-table tr:nth-child(even) td{background:#FAFBFC}
-.breakdown-table td.cost{font-weight:700;color:var(--accent)}
-.breakdown-table td.entered{color:var(--text)}
-.breakdown-table td.estimated{color:var(--accent2);font-style:italic}
-.breakdown-table tfoot td{
-  background:var(--accent-light);font-weight:700;color:var(--accent);
-  border-top:2px solid var(--accent);
-}
 .panel-disclosure{
   margin-top:14px;padding:10px 12px;
   background:rgba(255,255,255,0.12);
@@ -314,6 +275,14 @@ select:focus,input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
         <input type="radio" name="renew" id="r-green" value="green" onchange="onFilterChange()">
         <label for="r-green">🌱 100% Only</label>
       </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Full Plan Analysis</div>
+      <a href="https://buy.stripe.com/28EcN50ld1A3g1ifM638401" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 14px;background:linear-gradient(135deg,#0A3560,#1A73C8);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;font-family:'Inter',sans-serif;cursor:pointer;text-align:center;">
+        📄 Get Full Report — $1
+      </a>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;text-align:center;">Month-by-month cost breakdown for any plan. Shareable link included.</div>
     </div>
 
   </div>
@@ -695,8 +664,6 @@ function buildPlanCard(p, rank, tier) {
   var r1000 = p.rate1000 != null ? p.rate1000.toFixed(1) + '¢' : '—';
   var r2000 = p.rate2000 != null ? p.rate2000.toFixed(1) + '¢' : '—';
 
-  var enroll = '';
-  var efl = '';
 
   return '<div class="plan-card ' + rc + '">' +
     '<div class="plan-badge">' + badge + '</div>' +
@@ -725,64 +692,10 @@ function buildPlanCard(p, rank, tier) {
       '<span class="etf-label">Early Termination Fee</span>' +
       etfHtml +
     '</div>' +
-    buildMonthlyTable(p, 'p' + rank) +
-    /* enroll/efl buttons hidden */
+    /* monthly breakdown, enroll/efl buttons hidden */
   '</div>';
 }
 
-function toggleBreakdown(id) {
-  var btn   = document.getElementById('btn-' + id);
-  var table = document.getElementById('tbl-' + id);
-  var isOpen = table.classList.contains('open');
-  if (isOpen) {
-    table.classList.remove('open');
-    btn.classList.remove('open');
-  } else {
-    table.classList.add('open');
-    btn.classList.add('open');
-  }
-}
-
-function buildMonthlyTable(p, cardId) {
-  if (p.rate500 == null && p.rate1000 == null && p.rate2000 == null) return '';
-  var ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var userInputs = getUserInputs();
-  var annualTotal = 0;
-  var rows = '';
-  for (var i = 0; i < 12; i++) {
-    var kwh     = Math.round(projectedUsage[i]);
-    var rate    = interpolateRate(p, kwh);
-    if (rate == null) continue;
-    var cost    = (rate / 100) * kwh;
-    annualTotal += cost;
-    var isEntered = userInputs[i] !== null && userInputs[i] > 0;
-    rows += '<tr>' +
-      '<td>' + ABBR[i] + '</td>' +
-      '<td class="' + (isEntered ? 'entered' : 'estimated') + '">' +
-        kwh.toLocaleString() + ' kWh' + (isEntered ? '' : '*') +
-      '</td>' +
-      '<td class="cost">$' + cost.toFixed(2) + '</td>' +
-    '</tr>';
-  }
-  var hasEstimates = userInputs.some(function(v){ return v === null; });
-  return '<div class="monthly-breakdown">' +
-    '<button class="breakdown-toggle" id="btn-' + cardId + '" onclick="toggleBreakdown(' + "'" + cardId + "'" + ')">' +
-      '📅 View projected monthly costs' +
-      '<span class="arrow">▼</span>' +
-    '</button>' +
-    '<div class="breakdown-table-wrap" id="tbl-' + cardId + '">' +
-      '<table class="breakdown-table">' +
-        '<thead><tr><th>Month</th><th>Usage</th><th>Est. Cost</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody>' +
-        '<tfoot><tr>' +
-          '<td colspan="2">Annual Total</td>' +
-          '<td>$' + annualTotal.toFixed(2) + '</td>' +
-        '</tr></tfoot>' +
-      '</table>' +
-      (hasEstimates ? '<div style="font-size:10px;color:var(--muted);padding:6px 10px;background:var(--surface2);">* Estimated from seasonal averages</div>' : '') +
-    '</div>' +
-  '</div>';
-}
 
 function tduLabel(tdu) {
   return TDU_LABELS[tdu] || tdu;
