@@ -35,34 +35,89 @@ TDU_LABELS = {
     "LUBBOCK POWER & LIGHT SYSTEM":            "Lubbock P&L",
 }
 
-# Fallback TDU delivery charges (fixed $/month, variable $/kWh). Used only if the
-# TDURates sheet in the Excel file can't be read. Keep in sync with build_from_excel.py.
-FALLBACK_TDU_RATES = {
-    "ONCOR ELECTRIC DELIVERY COMPANY":         {"fixed": 4.06, "variable": 0.060295},
-    "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": {"fixed": 4.90, "variable": 0.06413},
-    "AEP TEXAS NORTH":                         {"fixed": 3.24, "variable": 0.056407},
-    "AEP TEXAS CENTRAL":                       {"fixed": 3.24, "variable": 0.057554},
-    "TEXAS-NEW MEXICO POWER COMPANY":          {"fixed": 7.85, "variable": 0.074022},
-    "LUBBOCK POWER & LIGHT SYSTEM":            {"fixed": 0.00, "variable": 0.06312},
-}
+# ── TDU DELIVERY RATES, BY EFFECTIVE DATE ─────────────────────────────────────
+# The tracker's REP-only cost = PowerToChoose all-in price minus TDU delivery
+# (fixed $/month spread over usage + variable $/kWh). TDU rates change (usually
+# March 1 and September 1), so each day is priced with the rates in effect ON that
+# day. The schedule lives in tdu_rate_history.json; it is created from the seed
+# below on first run. If your Excel TDURates sheet ever differs from the latest
+# entry, a new entry is added automatically, effective the day it is noticed. If the
+# tariff really took effect earlier (e.g. Sep 1), edit that entry's "effective"
+# date in tdu_rate_history.json and run again; history is recomputed every run.
+TDU_RATE_PATH = os.path.join(SCRIPT_DIR, "tdu_rate_history.json")
 BRACKETS = (500, 1000, 2000)
 
-def load_tdu_rates(excel_path):
-    """Read TDU delivery charges from the Excel TDURates sheet (same reader the
-    plan-finder build uses); fall back to the hardcoded table if unavailable."""
+def _r(fixed, variable):
+    return {"fixed": fixed, "variable": variable}
+
+TDU_RATE_SEED = [
+    {"effective": "2000-01-01", "rates": {
+        "ONCOR ELECTRIC DELIVERY COMPANY":         _r(4.06, 0.061196),
+        "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": _r(4.90, 0.051461),
+        "AEP TEXAS NORTH":                         _r(3.24, 0.056677),
+        "AEP TEXAS CENTRAL":                       _r(3.24, 0.058272),
+        "TEXAS-NEW MEXICO POWER COMPANY":          _r(7.85, 0.064665),
+        "LUBBOCK POWER & LIGHT SYSTEM":            _r(0.00, 0.06312)}},
+    {"effective": "2026-08-23", "rates": {
+        "ONCOR ELECTRIC DELIVERY COMPANY":         _r(4.06, 0.060295),
+        "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": _r(4.90, 0.049811),
+        "AEP TEXAS NORTH":                         _r(3.24, 0.056677),
+        "AEP TEXAS CENTRAL":                       _r(3.24, 0.058272),
+        "TEXAS-NEW MEXICO POWER COMPANY":          _r(7.85, 0.064665),
+        "LUBBOCK POWER & LIGHT SYSTEM":            _r(0.00, 0.06312)}},
+    {"effective": "2026-09-01", "rates": {
+        "ONCOR ELECTRIC DELIVERY COMPANY":         _r(4.06, 0.060295),
+        "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": _r(4.90, 0.06413),
+        "AEP TEXAS NORTH":                         _r(3.24, 0.056407),
+        "AEP TEXAS CENTRAL":                       _r(3.24, 0.057554),
+        "TEXAS-NEW MEXICO POWER COMPANY":          _r(7.85, 0.074022),
+        "LUBBOCK POWER & LIGHT SYSTEM":            _r(0.00, 0.06312)}},
+]
+
+def load_rate_schedule(excel_path, today):
+    """Load the dated TDU rate schedule; add an entry if Excel's rates changed."""
+    if os.path.exists(TDU_RATE_PATH):
+        with open(TDU_RATE_PATH, "r", encoding="utf-8") as f:
+            schedule = json.load(f)
+    else:
+        schedule = json.loads(json.dumps(TDU_RATE_SEED))
+    schedule.sort(key=lambda e: e["effective"])
+
     try:
         from build_from_excel import read_tdu_rates
-        rates = read_tdu_rates(excel_path)
-        if rates:
-            return rates
+        excel_rates = read_tdu_rates(excel_path)
     except Exception as e:
-        print(f"  WARNING: could not read TDU rates from Excel ({e}) - using fallback table.")
-    return FALLBACK_TDU_RATES
+        print(f"  WARNING: could not read TDU rates from Excel ({e}).")
+        excel_rates = {}
+
+    latest = schedule[-1]["rates"]
+    def differs(a, b):
+        return abs(a["fixed"] - b["fixed"]) > 1e-9 or abs(a["variable"] - b["variable"]) > 1e-9
+    changed = [t for t, r in excel_rates.items() if t in latest and differs(r, latest[t])]
+    if changed:
+        merged = dict(latest)
+        merged.update({t: excel_rates[t] for t in changed})
+        schedule.append({"effective": today, "rates": merged})
+        print("  NOTICE: TDU delivery rates in Excel changed for: " +
+              ", ".join(TDU_LABELS.get(t, t) for t in changed))
+        print(f"  Recorded as effective {today}. If the tariff took effect earlier (e.g. Mar 1 / Sep 1),")
+        print(f"  edit that entry's date in {TDU_RATE_PATH} and run again.")
+
+    with open(TDU_RATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(schedule, f, indent=1)
+    return schedule
+
+def rates_on(schedule, date, tdu):
+    """TDU rates in effect on a date (falls back to the earliest entry)."""
+    chosen = schedule[0]
+    for entry in schedule:
+        if entry["effective"] <= date:
+            chosen = entry
+    return chosen["rates"].get(tdu)
 
 def add_rep_costs(entry, tdu_rates_for_area):
-    """Add rep500/rep1000/rep2000 to one TDU entry: the PowerToChoose all-in
-    average minus TDU delivery (fixed/month spread over usage + per-kWh charge),
-    in cents per kWh."""
+    """Set rep500/rep1000/rep2000 on one TDU entry: the all-in average minus TDU
+    delivery at that usage, in cents per kWh."""
     for kwh in BRACKETS:
         all_in = entry.get(f"avg{kwh}")
         if all_in is None or not tdu_rates_for_area:
@@ -71,18 +126,12 @@ def add_rep_costs(entry, tdu_rates_for_area):
         tdu_cents = (tdu_rates_for_area["fixed"] / kwh + tdu_rates_for_area["variable"]) * 100
         entry[f"rep{kwh}"] = round(all_in - tdu_cents, 2)
 
-def backfill_rep_costs(history, tdu_rates):
-    """One-time fill for snapshots saved before REP costs were tracked. Values are
-    written into the history file, so later TDU rate changes never rewrite them.
-    NOTE: uses the TDU rates in effect now, so pre-existing days are approximate
-    if TDU rates changed during that period."""
-    filled = 0
+def recompute_rep_costs(history, schedule):
+    """Recompute REP-only costs for EVERY snapshot using the rates in effect on
+    each snapshot's own date, so a TDU rate change never shows up as a fake jump."""
     for snap in history["snapshots"]:
         for tdu, entry in snap.get("tdu", {}).items():
-            if "rep1000" not in entry:
-                add_rep_costs(entry, tdu_rates.get(tdu))
-                filled += 1
-    return filled
+            add_rep_costs(entry, rates_on(schedule, snap["date"], tdu))
 
 def clean_numeric(val):
     if pd.isna(val):
@@ -196,20 +245,18 @@ def update_history(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
         label = TDU_LABELS.get(tdu, tdu)
         print(f"  {label}: 500={vals['avg500']}c  1000={vals['avg1000']}c  2000={vals['avg2000']}c  ({vals['count']} plans)")
 
-    tdu_rates = load_tdu_rates(excel_path)
+    schedule = load_rate_schedule(excel_path, today)
     for tdu, vals in averages.items():
-        add_rep_costs(vals, tdu_rates.get(tdu))
+        add_rep_costs(vals, rates_on(schedule, today, tdu))
         label = TDU_LABELS.get(tdu, tdu)
         print(f"  {label} REP-only: 500={vals['rep500']}c  1000={vals['rep1000']}c  2000={vals['rep2000']}c")
 
     history = load_history()
-    n = backfill_rep_costs(history, tdu_rates)
-    if n:
-        print(f"  Backfilled REP-only costs for {n} older TDU entries")
     history["snapshots"] = [s for s in history["snapshots"] if s["date"] != today]
     top_plans = get_top_plans(df, term=12, n=3)
     history["snapshots"].append({"date": today, "tdu": averages, "top12": top_plans})
     history["snapshots"].sort(key=lambda s: s["date"])
+    recompute_rep_costs(history, schedule)
     save_history(history)
 
     total = len(history["snapshots"])
