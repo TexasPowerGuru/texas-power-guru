@@ -148,7 +148,7 @@ select:focus{outline:none;border-color:var(--accent2)}
       <div class="stat-sub" id="statDateRange">—</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label" id="statCurrentLabel">Current Avg Rate (1,000 kWh)</div>
+      <div class="stat-label" id="statCurrentLabel">Current avg REP energy cost</div>
       <div class="stat-val" id="statCurrentRate">—</div>
       <div class="stat-change" id="statChange">—</div>
     </div>
@@ -167,14 +167,14 @@ select:focus{outline:none;border-color:var(--accent2)}
   <!-- CHART CARD -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-      <div class="section-title" style="margin-bottom:0">Average Rate Trends</div>
+      <div class="section-title" style="margin-bottom:0">Average REP Energy Cost Trends</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
         <div class="filter-group">
           <div class="filter-label">kWh Bracket</div>
           <select id="bracketSel" onchange="updateChart()">
-            <option value="avg500">@ 500 kWh</option>
-            <option value="avg1000" selected>@ 1,000 kWh</option>
-            <option value="avg2000">@ 2,000 kWh</option>
+            <option value="rep500">@ 500 kWh</option>
+            <option value="rep1000" selected>@ 1,000 kWh</option>
+            <option value="rep2000">@ 2,000 kWh</option>
           </select>
         </div>
         <div class="filter-group">
@@ -198,6 +198,7 @@ select:focus{outline:none;border-color:var(--accent2)}
     <div class="chart-wrap">
       <canvas id="rateChart"></canvas>
     </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px">REP energy cost = PowerToChoose average price at the selected usage, minus the TDU delivery charge (fixed monthly + per-kWh) at that usage.</div>
   </div>
 
 
@@ -441,7 +442,7 @@ function updateChart() {
           grid: { color: '#E2E8F0' },
           title: {
             display: true,
-            text: 'Avg ¢ per kWh',
+            text: 'Avg REP energy cost, ¢ per kWh (excludes TDU delivery)',
             font: { family: 'Inter', size: 11 },
             color: '#718096'
           }
@@ -479,8 +480,8 @@ function updateStats(snaps, bracket) {
   var currentAvg = vals.length ? vals.reduce(function(a,b){return a+b;},0) / vals.length : null;
   document.getElementById('statCurrentRate').textContent = currentAvg ? currentAvg.toFixed(2) + '¢' : '—';
   document.getElementById('statCurrentLabel').textContent = selectedTdu === 'ALL'
-    ? 'Current avg rate (1,000 kWh)'
-    : TDU_LABELS[selectedTdu] + ' avg rate';
+    ? 'Current avg REP energy cost'
+    : TDU_LABELS[selectedTdu] + ' avg REP cost';
 
   // Change vs 30 days ago
   if (snaps.length > 30) {

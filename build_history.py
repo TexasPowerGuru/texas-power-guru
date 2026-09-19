@@ -35,6 +35,55 @@ TDU_LABELS = {
     "LUBBOCK POWER & LIGHT SYSTEM":            "Lubbock P&L",
 }
 
+# Fallback TDU delivery charges (fixed $/month, variable $/kWh). Used only if the
+# TDURates sheet in the Excel file can't be read. Keep in sync with build_from_excel.py.
+FALLBACK_TDU_RATES = {
+    "ONCOR ELECTRIC DELIVERY COMPANY":         {"fixed": 4.06, "variable": 0.060295},
+    "CENTERPOINT ENERGY HOUSTON ELECTRIC LLC": {"fixed": 4.90, "variable": 0.06413},
+    "AEP TEXAS NORTH":                         {"fixed": 3.24, "variable": 0.056407},
+    "AEP TEXAS CENTRAL":                       {"fixed": 3.24, "variable": 0.057554},
+    "TEXAS-NEW MEXICO POWER COMPANY":          {"fixed": 7.85, "variable": 0.074022},
+    "LUBBOCK POWER & LIGHT SYSTEM":            {"fixed": 0.00, "variable": 0.06312},
+}
+BRACKETS = (500, 1000, 2000)
+
+def load_tdu_rates(excel_path):
+    """Read TDU delivery charges from the Excel TDURates sheet (same reader the
+    plan-finder build uses); fall back to the hardcoded table if unavailable."""
+    try:
+        from build_from_excel import read_tdu_rates
+        rates = read_tdu_rates(excel_path)
+        if rates:
+            return rates
+    except Exception as e:
+        print(f"  WARNING: could not read TDU rates from Excel ({e}) - using fallback table.")
+    return FALLBACK_TDU_RATES
+
+def add_rep_costs(entry, tdu_rates_for_area):
+    """Add rep500/rep1000/rep2000 to one TDU entry: the PowerToChoose all-in
+    average minus TDU delivery (fixed/month spread over usage + per-kWh charge),
+    in cents per kWh."""
+    for kwh in BRACKETS:
+        all_in = entry.get(f"avg{kwh}")
+        if all_in is None or not tdu_rates_for_area:
+            entry[f"rep{kwh}"] = None
+            continue
+        tdu_cents = (tdu_rates_for_area["fixed"] / kwh + tdu_rates_for_area["variable"]) * 100
+        entry[f"rep{kwh}"] = round(all_in - tdu_cents, 2)
+
+def backfill_rep_costs(history, tdu_rates):
+    """One-time fill for snapshots saved before REP costs were tracked. Values are
+    written into the history file, so later TDU rate changes never rewrite them.
+    NOTE: uses the TDU rates in effect now, so pre-existing days are approximate
+    if TDU rates changed during that period."""
+    filled = 0
+    for snap in history["snapshots"]:
+        for tdu, entry in snap.get("tdu", {}).items():
+            if "rep1000" not in entry:
+                add_rep_costs(entry, tdu_rates.get(tdu))
+                filled += 1
+    return filled
+
 def clean_numeric(val):
     if pd.isna(val):
         return None
@@ -147,7 +196,16 @@ def update_history(excel_path=EXCEL_PATH, sheet_name=SHEET_NAME):
         label = TDU_LABELS.get(tdu, tdu)
         print(f"  {label}: 500={vals['avg500']}c  1000={vals['avg1000']}c  2000={vals['avg2000']}c  ({vals['count']} plans)")
 
+    tdu_rates = load_tdu_rates(excel_path)
+    for tdu, vals in averages.items():
+        add_rep_costs(vals, tdu_rates.get(tdu))
+        label = TDU_LABELS.get(tdu, tdu)
+        print(f"  {label} REP-only: 500={vals['rep500']}c  1000={vals['rep1000']}c  2000={vals['rep2000']}c")
+
     history = load_history()
+    n = backfill_rep_costs(history, tdu_rates)
+    if n:
+        print(f"  Backfilled REP-only costs for {n} older TDU entries")
     history["snapshots"] = [s for s in history["snapshots"] if s["date"] != today]
     top_plans = get_top_plans(df, term=12, n=3)
     history["snapshots"].append({"date": today, "tdu": averages, "top12": top_plans})
